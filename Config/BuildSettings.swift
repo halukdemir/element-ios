@@ -96,14 +96,14 @@ final class BuildSettings: NSObject {
     }
     
     // Element-Web instance for the app
-    static let applicationWebAppUrlString = "https://app.element.io"
+    static let applicationWebAppUrlString = "https://element.geptap.com"
     
     
     // MARK: - Server configuration
     
     // Default servers proposed on the authentication screen
-    static let serverConfigDefaultHomeserverUrlString = "https://matrix.org"
-    static let serverConfigDefaultIdentityServerUrlString = "https://vector.im"
+    static let serverConfigDefaultHomeserverUrlString = "https://matrix.geptap.com"
+    static let serverConfigDefaultIdentityServerUrlString = "https://matrix.geptap.com"
     
     static let serverConfigSygnalAPIUrlString = "https://matrix.org/_matrix/push/v1/notify"
     
@@ -111,9 +111,9 @@ final class BuildSettings: NSObject {
     // MARK: - Legal URLs
     
     // Note: Set empty strings to hide the related entry in application settings
-    static let applicationCopyrightUrlString = "https://element.io/copyright"
-    static let applicationPrivacyPolicyUrlString = "https://element.io/privacy"
-    static let applicationTermsConditionsUrlString = "https://element.io/terms-of-service"
+    static let applicationCopyrightUrlString = "https://geptap.com/copyright"
+    static let applicationPrivacyPolicyUrlString = "https://geptap.com/privacy"
+    static let applicationTermsConditionsUrlString = "https://geptap.com/terms-of-service"
     
     
     // MARk: - Matrix permalinks
@@ -131,6 +131,11 @@ final class BuildSettings: NSObject {
         // Official Matrix ones
         "matrix.to": ["/"],
         "www.matrix.to": ["/"],
+        // Gep
+        "www.geptap.com": ["/"],
+        "geptap.com": ["/"],
+        "matrix.geptap.com": ["/"],
+        "dimension.geptap.com": ["/", "/web", "/app"],
     ]
     
     
@@ -158,14 +163,14 @@ final class BuildSettings: NSObject {
     static let roomsAllowToJoinPublicRooms: Bool = true
     
     // MARK: - Analytics
-    static let analyticsServerUrl = URL(string: "https://piwik.riot.im/piwik.php")
+    static let analyticsServerUrl = URL(string: "https://piwik.geptap.com/piwik.php")
     static let analyticsAppId = "14"
     
     
     // MARK: - Bug report
-    static let bugReportEndpointUrlString = "https://riot.im/bugreports"
+    static let bugReportEndpointUrlString = "https://geptap.com/bugreports"
     // Use the name allocated by the bug report server
-    static let bugReportApplicationId = "riot-ios"
+    static let bugReportApplicationId = "geptap-ios"
     
     
     // MARK: - Integrations

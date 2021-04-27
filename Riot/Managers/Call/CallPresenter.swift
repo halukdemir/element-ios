@@ -387,11 +387,12 @@ class CallPresenter: NSObject {
             }
             return
         }
-        if callVC.isDisplayingAlert {
+/*        if callVC.isDisplayingAlert {
             completion()
         } else {
             dismissCallVC(callVC, completion: completion)
         }
+ */
     }
     
     private func logCallVC(_ callVC: UIViewController, log: String) {
@@ -531,7 +532,7 @@ class CallPresenter: NSObject {
             return
         }
         newCallVC.playRingtone = !isCallKitEnabled
-        newCallVC.delegate = self
+        //newCallVC.delegate = self
         callVCs[call.callId] = newCallVC
         
         if UIApplication.shared.applicationState == .background && call.isIncoming {
@@ -763,7 +764,7 @@ class CallPresenter: NSObject {
 }
 
 //  MARK: - MXKCallViewControllerDelegate
-
+/*
 extension CallPresenter: MXKCallViewControllerDelegate {
     
     func dismiss(_ callViewController: MXKCallViewController!, completion: (() -> Void)!) {
@@ -806,7 +807,7 @@ extension CallPresenter: MXKCallViewControllerDelegate {
     }
     
 }
-
+*/
 //  MARK: - UIViewControllerTransitioningDelegate
 
 extension CallPresenter: UIViewControllerTransitioningDelegate {
