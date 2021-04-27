@@ -174,7 +174,10 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
 
     if ([action isEqualToString:@"close_scalar"])
     {
-        [self withdrawViewControllerAnimated:YES completion:nil];
+        // MARK: Dimension Fix BEGIN
+        [self withdrawViewControllerAnimated:YES completion:^ {
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"onWebReloaded" object:self];
+        }];
         return;
     }
 
@@ -406,6 +409,9 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
                                              @"success": @(YES)
                                              }
                                  toRequest:requestId];
+                // MARK: Dimension Fix BEGIN
+                [self withdrawViewControllerAnimated:YES completion:nil];
+                // MARK: Dimension Fix END
             }
         } failure:^(NSError *error) {
 

@@ -374,6 +374,21 @@ NSString *const kJavascriptSendResponseToPostMessageAPI = @"riotIOS.sendResponse
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler
 {
     NSString *urlString = navigationAction.request.URL.absoluteString;
+    
+    // MARK: Dimension Fix BEGIN
+    if ([urlString localizedCaseInsensitiveContainsString:@"stickerpicker"]) {
+            //do something
+            NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+            BOOL stickerWidgetAdded = [defaults boolForKey:@"stickerWidgetAdded"];
+
+            if(!stickerWidgetAdded){
+                urlString = @ "js:%7B%22event.data%22:%7B%22action%22:%22set_widget%22,%22widget_id%22:%22dimension-stickerpicker-1619324368929%22,%22url%22:%22https://dimension.geptap.com/widgets/stickerpicker%22,%22type%22:%22m.stickerpicker%22,%22name%22:%22Stickerpack%22,%22userWidget%22:true,%22_id%22:%221619333662495-0.s8q96lg9dpi-1%22%7D%7D";
+                [defaults setBool:YES forKey:@"stickerWidgetAdded"];
+                NSLog(@"[WidgetVC] STICKERPICKER ADDED");
+            }
+            NSLog(@"[WidgetVC] STICKERPICKER WEBVIEW");
+    }
+    // MARK: Dimension Fix END
 
     // TODO: We should use the WebKit PostMessage API and the
     // `didReceiveScriptMessage` delegate to manage the JS<->Native bridge
@@ -472,7 +487,9 @@ NSString *const kJavascriptSendResponseToPostMessageAPI = @"riotIOS.sendResponse
         // TODO: Fix it once spec is finalised
         NSDictionary *widgetData;
         NSDictionary *stickerContent;
-        MXJSONModelSetDictionary(widgetData, requestData[@"widgetData"]);
+        // Dimension Fix BEGIN
+        MXJSONModelSetDictionary(widgetData, requestData[@"data"]);
+        // Dimension Fix END
         if (widgetData)
         {
             MXJSONModelSetDictionary(stickerContent, widgetData[@"content"]);
@@ -495,7 +512,9 @@ NSString *const kJavascriptSendResponseToPostMessageAPI = @"riotIOS.sendResponse
     {
         NSDictionary *widgetData;
         NSString *integType, *integId;
-        MXJSONModelSetDictionary(widgetData, requestData[@"widgetData"]);
+        //MARK: Dimension Fix BEGIN
+        MXJSONModelSetDictionary(widgetData, requestData[@"data"]);
+        //MARK: Dimension Fix END
         if (widgetData)
         {
             MXJSONModelSetString(integType, widgetData[@"integType"]);

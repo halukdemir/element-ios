@@ -123,7 +123,15 @@
     }
     else
     {
-        success(widgetUrl);
+        // MARK: Dimension Fix BEGIN
+        return [[WidgetManager sharedManager] getScalarTokenForMXSession:_mxSession validate:YES success:^(NSString *scalarToken) {
+                    // Add the user scalar token
+            widgetUrl = [widgetUrl stringByAppendingString:[NSString stringWithFormat:@"&scalar_token=%@",
+                                                                    scalarToken]];
+
+            success(widgetUrl);
+        } failure:failure];
+        // MARK: Dimension Fix END
     }
     
     return nil;

@@ -40,7 +40,8 @@
 - (void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:animated];
-
+        
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onWebReloaded:) name:@"onWebReloaded" object:nil];
     // Make sure the content is up-to-date when we come back from the sticker picker settings screen
     [webView reload];
 }
@@ -55,6 +56,10 @@
                                                    widgetId:self.widget.widgetId];
 
     [self presentViewController:modularVC animated:NO completion:nil];
+}
+
+- (void)onWebReloaded:(NSNotification *)notification {
+    [webView reload];
 }
 
 @end

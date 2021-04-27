@@ -1900,6 +1900,11 @@ const NSTimeInterval kResizeComposerAnimationDuration = .05;
     }
     else
     {
+        // MARK: Dimension Fix BEGIN
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults setBool:NO forKey:@"stickerWidgetAdded"];
+        // MARK: Dimension Fix END
+
         // The Sticker picker widget is not installed yet. Propose the user to install it
         MXWeakify(self);
 
