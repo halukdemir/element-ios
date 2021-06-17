@@ -44,6 +44,12 @@ class RoomDirectCallStatusBubbleCell: RoomBaseCallBubbleCell {
         return self.className + ".decline"
     }
     
+    /// Action identifier used when the user pressed "End call" button for an incoming call.
+    /// The `userInfo` dictionary contains an `MXEvent` object under the `kMXKRoomBubbleCellEventKey` key, representing the invite event of the call.
+    static var endCallAction: String {
+        return self.className + ".endCall"
+    }
+    
     private var callDurationString: String = ""
     private var isVideoCall: Bool = false
     private var isIncoming: Bool = false
@@ -112,7 +118,16 @@ class RoomDirectCallStatusBubbleCell: RoomBaseCallBubbleCell {
             
             return view
         case .active:
-            return nil
+            let view = HorizontalButtonsContainerView.loadFromNib()
+            view.secondButton.isHidden = true
+            
+            view.firstButton.style = .negative
+            view.firstButton.setTitle(VectorL10n.eventFormatterCallEndCall, for: .normal)
+            view.firstButton.setImage(Asset.Images.voiceCallHangupIcon.image, for: .normal)
+            view.firstButton.removeTarget(nil, action: nil, for: .touchUpInside)
+            view.firstButton.addTarget(self, action: #selector(endCallAction(_:)), for: .touchUpInside)
+            
+            return view
         case .declined:
             let view = HorizontalButtonsContainerView.loadFromNib()
             view.secondButton.isHidden = true
@@ -156,13 +171,18 @@ class RoomDirectCallStatusBubbleCell: RoomBaseCallBubbleCell {
         case .fledgling,
             .waitLocalMedia,
             .createOffer,
-            .inviteSent,
             .connecting:
             viewState = .active
             if call.isIncoming {
                 statusText = VectorL10n.eventFormatterCallYouCurrentlyIn
             } else {
-                statusText = VectorL10n.eventFormatterCallYouStarted
+                statusText = VectorL10n.eventFormatterCallConnecting
+            }
+        case .inviteSent:
+            if call.isIncoming {
+                statusText = VectorL10n.eventFormatterCallYouCurrentlyIn
+            } else {
+                statusText = VectorL10n.eventFormatterCallRinging
             }
         case .createAnswer,
              .connected,
@@ -283,6 +303,13 @@ class RoomDirectCallStatusBubbleCell: RoomBaseCallBubbleCell {
                             userInfo: actionUserInfo)
     }
     
+    @objc
+    private func endCallAction(_ sender: CallTileActionButton) {
+        self.delegate?.cell(self,
+                            didRecognizeAction: Self.endCallAction,
+                            userInfo: actionUserInfo)
+    }
+    
     //  MARK: - MXKCellRendering
     
     override func render(_ cellData: MXKCellData!) {
@@ -383,6 +410,11 @@ class RoomDirectCallStatusBubbleCell: RoomBaseCallBubbleCell {
                 ?? events.first(where: { $0.eventType == .callReject })?.originServerTs else {
             //  not ended yet, compute the diff from now
             return (NSTimeIntervalSince1970 - TimeInterval(startDate))/MSEC_PER_SEC
+        }
+        
+        guard startDate < endDate else {
+            // started but hung up/rejected on other end around the same time
+            return 0
         }
         
         //  ended, compute the diff between two dates

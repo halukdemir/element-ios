@@ -74,17 +74,8 @@
         
         // Sort rooms according to their last messages (most recent first)
         NSComparator comparator = ^NSComparisonResult(MXKRecentCellData *recentCellData1, MXKRecentCellData *recentCellData2) {
-            
-            NSComparisonResult result = NSOrderedAscending;
-            if (recentCellData2.roomSummary.lastMessageOriginServerTs > recentCellData1.roomSummary.lastMessageOriginServerTs)
-            {
-                result = NSOrderedDescending;
-            }
-            else if (recentCellData2.roomSummary.lastMessageOriginServerTs == recentCellData1.roomSummary.lastMessageOriginServerTs)
-            {
-                result = NSOrderedSame;
-            }
-            return result;
+
+            return [recentCellData1.roomSummary.lastMessage compareOriginServerTs:recentCellData2.roomSummary.lastMessage];
         };
         [cellData sortUsingComparator:comparator];
         
@@ -98,7 +89,7 @@
         
     } failure:^(NSError * _Nonnull error) {
         
-        NSLog(@"[ShareDataSource failed to get room summaries]");
+        MXLogDebug(@"[ShareDataSource failed to get room summaries]");
         
     }];
 }

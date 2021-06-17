@@ -107,7 +107,7 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
         } failure:^(NSError *error) {
             MXStrongifyAndReturnIfNil(self);
 
-            NSLog(@"[IntegraionManagerVS] Cannot open due to missing scalar token. Error: %@", error);
+            MXLogDebug(@"[IntegraionManagerVS] Cannot open due to missing scalar token. Error: %@", error);
 
             self->operation = nil;
             [self stopActivityIndicator];
@@ -278,7 +278,7 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
     }
     else
     {
-        NSLog(@"[IntegrationManagerViewControllerVC] Unhandled postMessage event with action %@: %@", action, requestData);
+        MXLogDebug(@"[IntegrationManagerViewControllerVC] Unhandled postMessage event with action %@: %@", action, requestData);
     }
 }
 
@@ -301,7 +301,7 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
 
 - (void)inviteUser:(NSString*)userId request:(NSString*)requestId data:(NSDictionary*)requestData
 {
-    NSLog(@"[IntegrationManagerVC] Received request to invite %@ into room %@.", userId, roomId);
+    MXLogDebug(@"[IntegrationManagerVC] Received request to invite %@ into room %@.", userId, roomId);
 
     [self roomCheckForRequest:requestId data:requestData onComplete:^(MXRoom *room, MXRoomState *roomState) {
 
@@ -335,7 +335,7 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
 
 - (void)setWidget:(NSString*)requestId data:(NSDictionary*)requestData
 {
-    NSLog(@"[IntegrationManagerVC] Received request to set widget");
+    MXLogDebug(@"[IntegrationManagerVC] Received request to set widget");
 
     NSString *widget_id, *widgetType, *widgetUrl;
     NSString *widgetName; // optional
@@ -531,7 +531,7 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
 
 - (void)getMembershipState:(NSString*)userId request:(NSString*)requestId data:(NSDictionary*)requestData
 {
-    NSLog(@"[IntegrationManagerVC] membership_state of %@ in room %@ requested.", userId, roomId);
+    MXLogDebug(@"[IntegrationManagerVC] membership_state of %@ in room %@ requested.", userId, roomId);
 
     [self roomCheckForRequest:requestId data:requestData onComplete:^(MXRoom *room, MXRoomState *roomState) {
         MXRoomMember *member = [roomState.members memberWithUserId:userId];
@@ -541,7 +541,7 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
 
 - (void)getJoinRules:(NSString*)requestId data:(NSDictionary*)requestData
 {
-    NSLog(@"[IntegrationManagerVC] join_rules of %@ requested.", roomId);
+    MXLogDebug(@"[IntegrationManagerVC] join_rules of %@ requested.", roomId);
 
     [self roomCheckForRequest:requestId data:requestData onComplete:^(MXRoom *room, MXRoomState *roomState) {
         MXEvent *event = [roomState stateEventsWithType:kMXEventTypeStringRoomJoinRules].lastObject;
@@ -551,7 +551,7 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
 
 - (void)setPlumbingState:(NSString*)requestId data:(NSDictionary*)requestData
 {
-    NSLog(@"[IntegrationManagerVC] Received request to set plumbing state to status %@ in room %@.", requestData[@"status"], roomId);
+    MXLogDebug(@"[IntegrationManagerVC] Received request to set plumbing state to status %@ in room %@.", requestData[@"status"], roomId);
 
     [self roomCheckForRequest:requestId data:requestData onComplete:^(MXRoom *room, MXRoomState *roomState) {
         NSString *status;
@@ -588,7 +588,7 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
         }
         else
         {
-            NSLog(@"[IntegrationManagerVC] setPlumbingState. Error: Plumbing state status should be a string.");
+            MXLogDebug(@"[IntegrationManagerVC] setPlumbingState. Error: Plumbing state status should be a string.");
         }
 
     }];
@@ -596,7 +596,7 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
 
 - (void)getBotOptions:(NSString*)userId request:(NSString*)requestId data:(NSDictionary*)requestData
 {
-    NSLog(@"[IntegrationManagerVC] Received request to get options for bot %@ in room %@", userId, roomId);
+    MXLogDebug(@"[IntegrationManagerVC] Received request to get options for bot %@ in room %@", userId, roomId);
 
     [self roomCheckForRequest:requestId data:requestData onComplete:^(MXRoom *room, MXRoomState *roomState) {
         NSString *stateKey = [NSString stringWithFormat:@"_%@", userId];
@@ -623,7 +623,7 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
 
 - (void)setBotOptions:(NSString*)userId request:(NSString*)requestId data:(NSDictionary*)requestData
 {
-    NSLog(@"[IntegrationManagerVC] Received request to set options for bot %@ in room %@", userId, roomId);
+    MXLogDebug(@"[IntegrationManagerVC] Received request to set options for bot %@ in room %@", userId, roomId);
 
     [self roomCheckForRequest:requestId data:requestData onComplete:^(MXRoom *room, MXRoomState *roomState) {
         NSDictionary *content;
@@ -660,14 +660,14 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
         }
         else
         {
-            NSLog(@"[IntegrationManagerVC] setBotOptions. Error: options should be a dict.");
+            MXLogDebug(@"[IntegrationManagerVC] setBotOptions. Error: options should be a dict.");
         }
     }];
 }
 
 - (void)setBotPower:(NSString*)userId request:(NSString*)requestId data:(NSDictionary*)requestData
 {
-    NSLog(@"[IntegrationManagerVC] Received request to set power level to %@ for bot %@ in room %@.", requestData[@"level"], userId, roomId);
+    MXLogDebug(@"[IntegrationManagerVC] Received request to set power level to %@ for bot %@ in room %@.", requestData[@"level"], userId, roomId);
 
     [self roomCheckForRequest:requestId data:requestData onComplete:^(MXRoom *room, MXRoomState *roomState) {
         NSInteger level = -1;
@@ -699,7 +699,7 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
         }
         else
         {
-            NSLog(@"[IntegrationManagerVC] setBotPower. Power level must be positive integer.");
+            MXLogDebug(@"[IntegrationManagerVC] setBotPower. Power level must be positive integer.");
             [self sendLocalisedError:@"widget_integration_positive_power_level" toRequest:requestId];
         }
     }];
@@ -747,7 +747,7 @@ NSString *const kIntegrationManagerAddIntegrationScreen = @"add_integ";
 {
     WidgetManagerConfig *config =  [[WidgetManager sharedManager] configForUser:mxSession.myUser.userId];
 
-    NSLog(@"[IntegrationManagerVC] presentTerms for %@", config.baseUrl);
+    MXLogDebug(@"[IntegrationManagerVC] presentTerms for %@", config.baseUrl);
 
     ServiceTermsModalCoordinatorBridgePresenter *serviceTermsModalCoordinatorBridgePresenter = [[ServiceTermsModalCoordinatorBridgePresenter alloc] initWithSession:mxSession baseUrl:config.baseUrl
                                                                                                                                                         serviceType:MXServiceTypeIntegrationManager

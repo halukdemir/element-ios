@@ -16,14 +16,27 @@
 
 import Foundation
 
+/// SplitViewCoordinatorParameters input parameters
+class SplitViewCoordinatorParameters {
+    
+    let router: RootRouterType
+    let userSessionsService: UserSessionsService
+    let appNavigator: AppNavigatorProtocol
+    
+    init(router: RootRouterType, userSessionsService: UserSessionsService, appNavigator: AppNavigatorProtocol) {
+        self.router = router
+        self.userSessionsService = userSessionsService
+        self.appNavigator = appNavigator
+    }
+}
+
 final class SplitViewCoordinator: NSObject, SplitViewCoordinatorType {
     
     // MARK: - Properties
     
-    // MARK: Private
+    // MARK: Private    
     
-    private let rootRouter: RootRouterType
-    private var session: MXSession?
+    private let parameters: SplitViewCoordinatorParameters
     
     private let splitViewController: UISplitViewController
     
@@ -39,12 +52,9 @@ final class SplitViewCoordinator: NSObject, SplitViewCoordinatorType {
     weak var delegate: SplitViewCoordinatorDelegate?
     
     // MARK: - Setup
-    
-    // TODO: Improve sessions injection
-    // at the moment the session is not used, see TabBarCoordinator `init`.
-    init(router: RootRouterType, session: MXSession?) {
-        self.rootRouter = router
-        self.session = session
+            
+    init(parameters: SplitViewCoordinatorParameters) {
+        self.parameters = parameters
         
         let splitViewController = RiotSplitViewController()
         splitViewController.preferredDisplayMode = .allVisible
@@ -71,11 +81,7 @@ final class SplitViewCoordinator: NSObject, SplitViewCoordinatorType {
         self.masterPresentable = tabBarCoordinator
         self.detailNavigationController = detailNavigationController
         
-        self.rootRouter.setRootModule(self.splitViewController)
-    }
-    
-    func update(with session: MXSession) {
-        self.session = session
+        self.parameters.router.setRootModule(self.splitViewController)
     }
     
     func toPresentable() -> UIViewController {        
@@ -117,7 +123,10 @@ final class SplitViewCoordinator: NSObject, SplitViewCoordinatorType {
     }
     
     private func createTabBarCoordinator() -> TabBarCoordinator {
-        let tabBarCoordinator = TabBarCoordinator(session: self.session)
+        
+        let coordinatorParameters = TabBarCoordinatorParameters(userSessionsService: self.parameters.userSessionsService, appNavigator: self.parameters.appNavigator)
+        
+        let tabBarCoordinator = TabBarCoordinator(parameters: coordinatorParameters)
         tabBarCoordinator.delegate = self
         return tabBarCoordinator
     }
@@ -162,10 +171,10 @@ extension SplitViewCoordinator: TabBarCoordinatorDelegate {
 /// MARK: - SplitViewMasterPresentableDelegate
 extension SplitViewCoordinator: SplitViewMasterPresentableDelegate {
     func splitViewMasterPresentable(_ presentable: Presentable, wantsToDisplay detailPresentable: Presentable) {
-        NSLog("[SplitViewCoordinator] splitViewMasterPresentable: \(presentable) wantsToDisplay detailPresentable: \(detailPresentable)")
+        MXLog.debug("[SplitViewCoordinator] splitViewMasterPresentable: \(presentable) wantsToDisplay detailPresentable: \(detailPresentable)")
         
         guard let detailNavigationController = self.detailNavigationController else {
-            NSLog("[SplitViewCoordinator] splitViewMasterPresentable: Failed to display because detailNavigationController is nil")
+            MXLog.debug("[SplitViewCoordinator] splitViewMasterPresentable: Failed to display because detailNavigationController is nil")
             return
         }
         

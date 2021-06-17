@@ -12,7 +12,7 @@ To build Element iOS project you need:
 
 ### Install Ruby
 
-Ruby is required for several build tools like CocoaPods, bundler and fastlane. Ruby is preinstalled on macOS, the system version is sufficient to build the porject tools, it's not required to install the latest version. If you want to install the lastest version of Ruby please check [official instructions](https://www.ruby-lang.org/en/documentation/installation/#homebrew).
+Ruby is required for several build tools like CocoaPods, bundler and fastlane. Ruby is preinstalled on macOS, the system version is sufficient to build the project tools, it's not required to install the latest version. If you want to install the lastest version of Ruby please check [official instructions](https://www.ruby-lang.org/en/documentation/installation/#homebrew).
 
 If you do not want to grant the ruby package manager, [RubyGems](https://rubygems.org/), admin privileges and you prefer install gems into your user directory, you can read instructions from the CocoaPods [guide about sudo-less installation](https://guides.cocoapods.org/using/getting-started.html#sudo-less-installation).
 
@@ -68,7 +68,7 @@ If you want to modify MatrixKit and/or MatrixSDK locally and see the result in E
 But before you have to checkout [MatrixKit](https://github.com/matrix-org/matrix-ios-kit) repository in `../matrix-ios-kit` and [MatrixSDK](https://github.com/matrix-org/matrix-ios-sdk) in `../matrix-ios-sdk` locally relatively to your Element iOS project folder.
 Be sure to use compatible branches for Element iOS, MatrixKit and MatrixSDK. For example, if you want to modify Element iOS from develop branch, use MatrixKit and MatrixSDK develop branches and then make your modifications.
 
-**Important**: By working with local pods (development pods) you will need to use legacy build system in Xcode, to have your local changes taken into account. To enable it go to Xcode menu and select `File > Workspace Settings… > Build System` and then choose `Legacy Build System`.
+**Important**: By working with [XcodeGen](https://github.com/yonaskolb/XcodeGen) you will need to use the _New Build System_ in Xcode, to have your some of the xcconfig variables taken into account. It should be enabled by default on the latest Xcode versions, but if you need to enable it go to Xcode menu and select `File > Workspace Settings… > Build System` and then choose `New Build System`.
 
 ### `$matrixKitVersion` Modification
 

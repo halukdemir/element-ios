@@ -570,7 +570,7 @@
                     // The identity server must be defined
                     if (!self.mainSession.matrixRestClient.identityServer)
                     {
-                        NSLog(@"[StartChatViewController] Invite %@ failed", participantId);
+                        MXLogDebug(@"[StartChatViewController] Invite %@ failed", participantId);
                         continue;
                     }
                     
@@ -603,9 +603,8 @@
         if (isDirect && inviteArray.count)
         {
             [[AppDelegate theDelegate] startDirectChatWithUserId:inviteArray.firstObject completion:^{
-                
+                self->createBarButtonItem.enabled = YES;
                 [self stopActivityIndicator];
-                
             }];
         }
         else
@@ -622,10 +621,10 @@
                 self->roomCreationRequest = nil;
                 [self stopActivityIndicator];
 
-                NSLog(@"[StartChatViewController] Create room failed");
+                MXLogDebug(@"[StartChatViewController] Create room failed");
 
                 // Alert user
-                [[AppDelegate theDelegate] showErrorAsAlert:error];
+                [[AppDelegate theDelegate] showAlertWithTitle:nil message:NSLocalizedStringFromTable(@"room_creation_dm_error", @"Vector", nil)];
             };
 
             [self.mainSession vc_canEnableE2EByDefaultInNewRoomWithUsers:inviteArray success:^(BOOL canEnableE2E) {
@@ -754,7 +753,7 @@
         
         if ([MXTools isEmailAddress:participantId])
         {
-            NSLog(@"[StartChatViewController] No identity server is configured, do not add participant with email");
+            MXLogDebug(@"[StartChatViewController] No identity server is configured, do not add participant with email");
             
             [contactsTableViewController refreshCurrentSelectedCell:YES];
             

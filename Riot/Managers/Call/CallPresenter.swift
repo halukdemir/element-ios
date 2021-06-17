@@ -118,27 +118,16 @@ class CallPresenter: NSObject {
     
     /// Start the service
     func start() {
+        MXLog.debug("[CallPresenter] start")
+        
         addCallObservers()
-        startCallTimer()
     }
     
     /// Stop the service
     func stop() {
+        MXLog.debug("[CallPresenter] stop")
+        
         removeCallObservers()
-        stopCallTimer()
-    }
-    
-    /// Method to be called when the call status bar is tapped.
-    func callStatusBarTapped() {
-        if let callVC = (inBarCallVC ?? activeCallVC) as? CallViewController {
-            dismissCallBar(for: callVC)
-            presentCallVC(callVC)
-            return
-        }
-        if let jitsiVC = jitsiVC {
-            dismissCallBar(for: jitsiVC)
-            presentCallVC(jitsiVC)
-        }
     }
     
     //  MARK - Group Calls
@@ -146,6 +135,8 @@ class CallPresenter: NSObject {
     /// Open the Jitsi view controller from a widget.
     /// - Parameter widget: the jitsi widget
     func displayJitsiCall(withWidget widget: Widget) {
+        MXLog.debug("[CallPresenter] displayJitsiCall: for widget: \(widget.widgetId)")
+        
         #if canImport(JitsiMeetSDK)
         let createJitsiBlock = { [weak self] in
             guard let self = self else { return }
@@ -165,7 +156,7 @@ class CallPresenter: NSObject {
             })
         }
         
-        if let jitsiVC = jitsiVC, jitsiVC.widget.widgetId == widget.widgetId {
+        if let jitsiVC = jitsiVC {
             if jitsiVC.widget.widgetId == widget.widgetId {
                 self.presentCallVC(jitsiVC)
             } else {
@@ -183,20 +174,26 @@ class CallPresenter: NSObject {
     }
     
     private func startJitsiCall(withWidget widget: Widget) {
-        if self.jitsiCalls.first(where: { $0.value.widgetId == widget.widgetId })?.key != nil {
+        MXLog.debug("[CallPresenter] startJitsiCall")
+        
+        if let uuid = self.jitsiCalls.first(where: { $0.value.widgetId == widget.widgetId })?.key {
             //  this Jitsi call is already managed by this class, no need to report the call again
+            MXLog.debug("[CallPresenter] startJitsiCall: already managed with id: \(uuid.uuidString)")
             return
         }
         
         guard let roomId = widget.roomId else {
+            MXLog.debug("[CallPresenter] startJitsiCall: no roomId on widget")
             return
         }
         
         guard let session = sessions.first else {
+            MXLog.debug("[CallPresenter] startJitsiCall: no active session")
             return
         }
         
         guard let room = session.room(withRoomId: roomId) else {
+            MXLog.debug("[CallPresenter] startJitsiCall: unknown room: \(roomId)")
             return
         }
         
@@ -204,7 +201,12 @@ class CallPresenter: NSObject {
         let handle = CXHandle(type: .generic, value: roomId)
         let startCallAction = CXStartCallAction(call: newUUID, handle: handle)
         let transaction = CXTransaction(action: startCallAction)
+        
+        MXLog.debug("[CallPresenter] startJitsiCall: new call with id: \(newUUID.uuidString)")
+        
         JMCallKitProxy.request(transaction) { (error) in
+            MXLog.debug("[CallPresenter] startJitsiCall: JMCallKitProxy returned \(String(describing: error))")
+            
             if error == nil {
                 JMCallKitProxy.reportCallUpdate(with: newUUID,
                                                 handle: roomId,
@@ -218,8 +220,11 @@ class CallPresenter: NSObject {
     }
     
     func endActiveJitsiCall() {
+        MXLog.debug("[CallPresenter] endActiveJitsiCall")
+        
         guard let jitsiVC = jitsiVC else {
             //  there is no active Jitsi call
+            MXLog.debug("[CallPresenter] endActiveJitsiCall: no active Jitsi call")
             return
         }
         
@@ -235,16 +240,22 @@ class CallPresenter: NSObject {
         self.jitsiVC = nil
         
         guard let widget = jitsiVC.widget else {
+            MXLog.debug("[CallPresenter] endActiveJitsiCall: no Jitsi widget for the active call")
             return
         }
         guard let uuid = self.jitsiCalls.first(where: { $0.value.widgetId == widget.widgetId })?.key else {
             //  this Jitsi call is not managed by this class
+            MXLog.debug("[CallPresenter] endActiveJitsiCall: Not managed Jitsi call: \(widget.widgetId)")
             return
         }
         
         let endCallAction = CXEndCallAction(call: uuid)
         let transaction = CXTransaction(action: endCallAction)
+        
+        MXLog.debug("[CallPresenter] endActiveJitsiCall: ended call with id: \(uuid.uuidString)")
+        
         JMCallKitProxy.request(transaction) { (error) in
+            MXLog.debug("[CallPresenter] endActiveJitsiCall: JMCallKitProxy returned \(String(describing: error))")
             if error == nil {
                 self.jitsiCalls.removeValue(forKey: uuid)
             }
@@ -252,34 +263,42 @@ class CallPresenter: NSObject {
     }
     
     func processWidgetEvent(_ event: MXEvent, inSession session: MXSession) {
+        MXLog.debug("[CallPresenter] processWidgetEvent")
+        
         guard JMCallKitProxy.isProviderConfigured() else {
             //  CallKit proxy is not configured, no benefit in parsing the event
+            MXLog.debug("[CallPresenter] processWidgetEvent: JMCallKitProxy not configured")
             return
         }
         
         guard let widget = Widget(widgetEvent: event, inMatrixSession: session) else {
+            MXLog.debug("[CallPresenter] processWidgetEvent: widget couldn't be created")
             return
         }
         
-        if self.jitsiCalls.first(where: { $0.value.widgetId == widget.widgetId })?.key != nil {
+        if let uuid = self.jitsiCalls.first(where: { $0.value.widgetId == widget.widgetId })?.key {
             //  this Jitsi call is already managed by this class, no need to report the call again
+            MXLog.debug("[CallPresenter] processWidgetEvent: Jitsi call already managed with id: \(uuid.uuidString)")
             return
         }
         
         if widget.isActive {
             guard widget.type == kWidgetTypeJitsiV1 || widget.type == kWidgetTypeJitsiV2 else {
                 //  not a Jitsi widget, ignore
+                MXLog.debug("[CallPresenter] processWidgetEvent: not a Jitsi widget")
                 return
             }
             
             if let jitsiVC = jitsiVC,
                jitsiVC.widget.widgetId == widget.widgetId {
                 //  this is already the Jitsi call we have atm
+                MXLog.debug("[CallPresenter] processWidgetEvent: ongoing Jitsi call")
                 return
             }
             
             if TimeInterval(event.age)/MSEC_PER_SEC > Constants.groupCallInviteLifetime {
                 //  too late to process the event
+                MXLog.debug("[CallPresenter] processWidgetEvent: expired call invite")
                 return
             }
             
@@ -291,6 +310,7 @@ class CallPresenter: NSObject {
             
             if event.sender == session.myUserId {
                 //  outgoing call
+                MXLog.debug("[CallPresenter] processWidgetEvent: Report outgoing call with id: \(newUUID.uuidString)")
                 JMCallKitProxy.reportOutgoingCall(with: newUUID, connectedAt: nil)
             } else {
                 //  incoming call
@@ -301,10 +321,15 @@ class CallPresenter: NSObject {
                 let user = session.user(withUserId: event.sender)
                 let displayName = NSString.localizedUserNotificationString(forKey: "GROUP_CALL_FROM_USER",
                                                                            arguments: [user?.displayname as Any])
+                
+                MXLog.debug("[CallPresenter] processWidgetEvent: Report new incoming call with id: \(newUUID.uuidString)")
+                
                 JMCallKitProxy.reportNewIncomingCall(UUID: newUUID,
                                                      handle: widget.roomId,
                                                      displayName: displayName,
                                                      hasVideo: true) { (error) in
+                    MXLog.debug("[CallPresenter] processWidgetEvent: JMCallKitProxy returned \(String(describing: error))")
+                    
                     if error != nil {
                         self.jitsiCalls.removeValue(forKey: newUUID)
                     }
@@ -313,8 +338,10 @@ class CallPresenter: NSObject {
         } else {
             guard let uuid = self.jitsiCalls.first(where: { $0.value.widgetId == widget.widgetId })?.key else {
                 //  this Jitsi call is not managed by this class
+                MXLog.debug("[CallPresenter] processWidgetEvent: not managed Jitsi call: \(widget.widgetId)")
                 return
             }
+            MXLog.debug("[CallPresenter] processWidgetEvent: ended call with id: \(uuid.uuidString)")
             JMCallKitProxy.reportCall(with: uuid, endedAt: nil, reason: .remoteEnded)
             self.jitsiCalls.removeValue(forKey: uuid)
         }
@@ -368,17 +395,12 @@ class CallPresenter: NSObject {
             if let oldCallVC = self.callVCs.values.first,
                self.presentedCallVC == nil,
                !self.uiOperationQueue.containsPresentCallVCOperation,
-               !self.uiOperationQueue.containsPresentCallBarOperation {
-                //  present the call bar after dismissing this one
-                self.presentCallBar(for: oldCallVC)
+               !self.uiOperationQueue.containsEnterPiPOperation {
+                //  present the call screen after dismissing this one
+                self.presentCallVC(oldCallVC)
             }
         }
         
-        if inBarCallVC == callVC {
-            //  this call currently in the status bar,
-            //  first present it and then dismiss it
-            presentCallVC(callVC)
-        }
         if pipCallVC == callVC {
             //  this call currently in the PiP mode,
             //  first present it by exiting PiP mode and then dismiss it
@@ -387,49 +409,18 @@ class CallPresenter: NSObject {
             }
             return
         }
-/*        if callVC.isDisplayingAlert {
+        if callVC.isDisplayingAlert {
             completion()
         } else {
             dismissCallVC(callVC, completion: completion)
         }
- */
     }
     
     private func logCallVC(_ callVC: UIViewController, log: String) {
         if let callVC = callVC as? CallViewController {
-            NSLog("[CallPresenter] \(log): call: \(String(describing: callVC.mxCall?.callId))")
+            MXLog.debug("[CallPresenter] \(log): Matrix call: \(String(describing: callVC.mxCall?.callId))")
         } else if let callVC = callVC as? JitsiViewController {
-            NSLog("[CallPresenter] \(log): call: \(callVC.widget.widgetId)")
-        }
-    }
-    
-    //  MARK: - Timer
-    
-    private func startCallTimer() {
-        callTimer = Timer.scheduledTimer(timeInterval: 1.0,
-                                                 target: self,
-                                                 selector: #selector(callTimerFired(_:)),
-                                                 userInfo: nil,
-                                                 repeats: true)
-    }
-    
-    private func stopCallTimer() {
-        callTimer?.invalidate()
-        callTimer = nil
-    }
-    
-    @objc private func callTimerFired(_ timer: Timer) {
-        if let inBarCallVC = inBarCallVC as? CallViewController {
-            guard let call = inBarCallVC.mxCall else {
-                return
-            }
-            guard call.state != .ended else {
-                return
-            }
-            
-            updateCallBar()
-        } else if inBarCallVC as? JitsiViewController != nil {
-            updateCallBar()
+            MXLog.debug("[CallPresenter] \(log): Jitsi call: \(callVC.widget.widgetId)")
         }
     }
     
@@ -438,10 +429,6 @@ class CallPresenter: NSObject {
     private func addCallObservers() {
         guard !isStarted else {
             return
-        }
-        
-        defer {
-            isStarted = true
         }
         
         NotificationCenter.default.addObserver(self,
@@ -460,6 +447,8 @@ class CallPresenter: NSObject {
                                                selector: #selector(groupCallTileTapped(_:)),
                                                name: .RoomGroupCallTileTapped,
                                                object: nil)
+        
+        isStarted = true
         
         #if canImport(JitsiMeetSDK)
         JMCallKitProxy.addListener(self)
@@ -487,10 +476,6 @@ class CallPresenter: NSObject {
             return
         }
         
-        defer {
-            isStarted = false
-        }
-        
         NotificationCenter.default.removeObserver(self,
                                                   name: NSNotification.Name(rawValue: kMXCallManagerNewCall),
                                                   object: nil)
@@ -503,6 +488,8 @@ class CallPresenter: NSObject {
         NotificationCenter.default.removeObserver(self,
                                                   name: .RoomGroupCallTileTapped,
                                                   object: nil)
+        
+        isStarted = false
         
         #if canImport(JitsiMeetSDK)
         JMCallKitProxy.removeListener(self)
@@ -532,7 +519,16 @@ class CallPresenter: NSObject {
             return
         }
         newCallVC.playRingtone = !isCallKitEnabled
-        //newCallVC.delegate = self
+        newCallVC.delegate = self
+        
+        if !call.isIncoming {
+            //  put other native calls on hold
+            callVCs.values.forEach({ $0.mxCall.hold(true) })
+            
+            //  terminate Jitsi calls
+            endActiveJitsiCall()
+        }
+        
         callVCs[call.callId] = newCallVC
         
         if UIApplication.shared.applicationState == .background && call.isIncoming {
@@ -560,23 +556,20 @@ class CallPresenter: NSObject {
         
         switch call.state {
         case .createAnswer:
-            NSLog("[CallPresenter] callStateChanged: call created answer: \(call.callId)")
+            MXLog.debug("[CallPresenter] callStateChanged: call created answer: \(call.callId)")
             if call.isIncoming, isCallKitEnabled, let callVC = callVCs[call.callId] {
                 presentCallVC(callVC)
             }
         case .connected:
-            NSLog("[CallPresenter] callStateChanged: call connected: \(call.callId)")
-            callTimer?.fire()
+            MXLog.debug("[CallPresenter] callStateChanged: call connected: \(call.callId)")
         case .onHold:
-            NSLog("[CallPresenter] callStateChanged: call holded: \(call.callId)")
-            callTimer?.fire()
+            MXLog.debug("[CallPresenter] callStateChanged: call holded: \(call.callId)")
             callHolded(withCallId: call.callId)
         case .remotelyOnHold:
-            NSLog("[CallPresenter] callStateChanged: call remotely holded: \(call.callId)")
-            callTimer?.fire()
+            MXLog.debug("[CallPresenter] callStateChanged: call remotely holded: \(call.callId)")
             callHolded(withCallId: call.callId)
         case .ended:
-            NSLog("[CallPresenter] callStateChanged: call ended: \(call.callId)")
+            MXLog.debug("[CallPresenter] callStateChanged: call ended: \(call.callId)")
             endCall(withCallId: call.callId)
         default:
             break
@@ -585,7 +578,7 @@ class CallPresenter: NSObject {
     
     @objc
     private func callTileTapped(_ notification: Notification) {
-        NSLog("[CallPresenter] callTileTapped")
+        MXLog.debug("[CallPresenter] callTileTapped")
         
         guard let bubbleData = notification.object as? RoomBubbleCellData else {
             return
@@ -599,7 +592,7 @@ class CallPresenter: NSObject {
             return
         }
         
-        NSLog("[CallPresenter] callTileTapped: for call: \(callEventContent.callId)")
+        MXLog.debug("[CallPresenter] callTileTapped: for call: \(callEventContent.callId)")
         
         guard let session = sessions.first else { return }
         
@@ -615,12 +608,16 @@ class CallPresenter: NSObject {
             return
         }
         
-        presentCallVC(callVC)
+        if callVC == pipCallVC {
+            exitPipCallVC(callVC)
+        } else {
+            presentCallVC(callVC)
+        }
     }
     
     @objc
     private func groupCallTileTapped(_ notification: Notification) {
-        NSLog("[CallPresenter] groupCallTileTapped")
+        MXLog.debug("[CallPresenter] groupCallTileTapped")
         
         guard let bubbleData = notification.object as? RoomBubbleCellData else {
             return
@@ -642,14 +639,18 @@ class CallPresenter: NSObject {
             return
         }
         
-        NSLog("[CallPresenter] groupCallTileTapped: for call: \(widget.widgetId)")
+        MXLog.debug("[CallPresenter] groupCallTileTapped: for call: \(widget.widgetId)")
         
         guard let jitsiVC = jitsiVC,
               jitsiVC.widget.widgetId == widget.widgetId else {
             return
         }
         
-        presentCallVC(jitsiVC)
+        if jitsiVC == pipCallVC {
+            exitPipCallVC(jitsiVC)
+        } else {
+            presentCallVC(jitsiVC)
+        }
     }
     
     //  MARK: - Call Screens
@@ -659,10 +660,6 @@ class CallPresenter: NSObject {
         
         //  do not use PiP transitions here, as we really want to present the screen
         callVC.transitioningDelegate = nil
-        
-        if let inBarCallVC = inBarCallVC {
-            dismissCallBar(for: inBarCallVC)
-        }
         
         if let presentedCallVC = presentedCallVC {
             dismissCallVC(presentedCallVC)
@@ -725,46 +722,10 @@ class CallPresenter: NSObject {
         uiOperationQueue.addOperation(operation)
     }
     
-    //  MARK: - Call Bar
-    
-    private func presentCallBar(for callVC: UIViewController, completion: (() -> Void)? = nil) {
-        logCallVC(callVC, log: "presentCallBar")
-
-        let activeCallVC = self.activeCallVC
-        
-        let operation = CallBarPresentOperation(presenter: self, activeCallVC: activeCallVC, numberOfPausedCalls: numberOfPausedCalls) { [weak self] in
-            //  active calls are more prior to paused ones.
-            //  So, if user taps the bar when we have one active and one paused call, we navigate to the active one.
-            self?.inBarCallVC = activeCallVC ?? callVC
-            completion?()
-        }
-        uiOperationQueue.addOperation(operation)
-    }
-    
-    private func updateCallBar() {
-        let activeCallVC = self.activeCallVC
-        
-        let operation = CallBarUpdateOperation(presenter: self, activeCallVC: activeCallVC, numberOfPausedCalls: numberOfPausedCalls)
-        uiOperationQueue.addOperation(operation)
-    }
-    
-    private func dismissCallBar(for callVC: UIViewController, completion: (() -> Void)? = nil) {
-        logCallVC(callVC, log: "dismissCallBar")
-        
-        let operation = CallBarDismissOperation(presenter: self) { [weak self] in
-            if callVC == self?.inBarCallVC {
-                self?.inBarCallVC = nil
-            }
-            completion?()
-        }
-        
-        uiOperationQueue.addOperation(operation)
-    }
-    
 }
 
 //  MARK: - MXKCallViewControllerDelegate
-/*
+
 extension CallPresenter: MXKCallViewControllerDelegate {
     
     func dismiss(_ callViewController: MXKCallViewController!, completion: (() -> Void)!) {
@@ -778,13 +739,8 @@ extension CallPresenter: MXKCallViewControllerDelegate {
             //  wait for the call state changes, will be handled there
             return
         } else {
-            if callVC.mxCall.isVideoCall {
-                //  go to pip mode here
-                enterPipCallVC(callVC, completion: completion)
-            } else {
-                dismissCallVC(callVC)
-                self.presentCallBar(for: callVC, completion: completion)
-            }
+            //  go to pip mode here
+            enterPipCallVC(callVC, completion: completion)
         }
     }
     
@@ -807,7 +763,7 @@ extension CallPresenter: MXKCallViewControllerDelegate {
     }
     
 }
-*/
+
 //  MARK: - UIViewControllerTransitioningDelegate
 
 extension CallPresenter: UIViewControllerTransitioningDelegate {
@@ -846,8 +802,8 @@ extension OperationQueue {
         return containsOperation(ofType: CallVCPresentOperation.self)
     }
     
-    var containsPresentCallBarOperation: Bool {
-        return containsOperation(ofType: CallBarPresentOperation.self)
+    var containsEnterPiPOperation: Bool {
+        return containsOperation(ofType: CallVCEnterPipOperation.self)
     }
     
     private func containsOperation(ofType type: Operation.Type) -> Bool {

@@ -2,14 +2,109 @@ Changes to be released in next version
 =================================================
 
 ✨ Features
+ * Add left panel (#4398).
+
+🙌 Improvements
+ * MXRoomSummary: Adapt room summary changes on MatrixSDK (#4360).
+ * EncryptionKeyManager: Create keys for room last message data type.
+ * Integrated FLEX for debug builds.
+ * VoIP: Add dial pad for PSTN capable servers to menu on homescreen.
+ * VoIP: Replace call bar with PiP tiles for every type of calls.
+ * Security settings: Display the cross-signing section (#4430).
+ * Security settings: The Secure backup section has been updated to match element-web UX (#4430).
+ * Wording: Replace Recovery Passphrase and Recovery Key by Security Phrase and Security Key (#4268).
+ * Room directory: Join room by alias or id (#4429).
+
+🐛 Bugfix
+ * StartChatViewController: Add more helpful message when trying to start DM with a user that does not exist (#224).
+ * RoomDirectCallStatusBubbleCell: Fix crash when entering a DM after a call is hung-up/rejected while being answered (#4403).
+ * ContactsDataSource: iPad Crashes when you select a contact in search and then collapse a section or clear the query text (#4414).
+ * SettingsViewController: Fix "auto" theme message to clarify that it matches the system theme on iOS 13+ (#2860).
+ * VoIP: Handle application inactive state too for VoIP pushes (#4269).
+ * VoIP: Do not terminate the app if protected data not available (#4419).
+ * KeyVerification: Listen for request state changes and show QR reader option when it's ready.
+
+⚠️ API Changes
+ * 
+
+🗣 Translations
+ * 
+    
+🧱 Build
+ * GH Actions: Make sure we use the latest version of MatrixKit.
+
+Others
+ *
+ 
+ Changes in 1.4.1 (2021-06-08)
+=================================================
+
+✨ Features
+ *
+
+🙌 Improvements
+ *
+
+🐛 Bugfix
+ * SettingsViewController: Fix crash when changing the app language (#4377).
+ * UserSessionsService: Fix room lists lost after a reset cache (#4395).
+
+⚠️ API Changes
+ *
+
+🗣 Translations
+ *
+    
+🧱 Build
+ *
+
+Others
+ *
+
+Changes in 1.4.0 (2021-06-03)
+=================================================
+
+✨ Features
+ * 
+
+🙌 Improvements
+ * Crypto: Do not decrypt synchronously. It asynchronously happens upstream now (#4306). 
+ * Navigation: Start decoupling view controllers managed by MasterTabBarController (#3596 and #3618).
+ * Jitsi: Include optional server name field on JitsiJWTPayloadContextMatrix.
+ * CallPresenter: Add more logs for group calls.
+ * Logging: Adopted MXLog throughout the application (vector-im/element-ios/issues/4351).
+
+🐛 Bugfix
+ * buildRelease.sh: Make bundler operations in the cloned repository folder.
+ * VoIP: Fix call bar layout issue for landscape.
+
+⚠️ API Changes
+ * 
+
+🗣 Translations
+ * Fix missing translation files for Icelandic.
+ * Enable Esperanto, Portuguese (Brazil), Kabyle, Norwegian Bokmål (nb), Swedish, Japanese and Welsh.
+    
+🧱 Build
+ * 
+
+Others
+ * 
+
+Improvements:
+ * Upgrade MatrixKit version ([v0.15.0](https://github.com/matrix-org/matrix-ios-kit/releases/tag/v0.15.0)).
+
+Changes in 1.3.9 (2021-05-18)
+=================================================
+
+✨ Features
  * 
 
 🙌 Improvements
  * 
 
 🐛 Bugfix
- * RoomVC: Avoid navigation to integration management using integration popup with settings set to integration disabled (#4261).
- * RiotSettings: Logging out resets RiotSettings (#4259).
+ * RecentsDataSource: Present the secure backup banner only if key backup is disabled.
 
 ⚠️ API Changes
  * 
@@ -22,6 +117,107 @@ Changes to be released in next version
 
 Others
  * 
+
+Improvements:
+
+
+Changes in 1.3.8 (2021-05-17)
+=================================================
+
+✨ Features
+ * 
+
+🙌 Improvements
+ * 
+
+🐛 Bugfix
+ * RecentsDataSource: Do not display secure backup banner when keys upload is in process.
+
+⚠️ API Changes
+ * 
+
+🗣 Translations
+ * 
+    
+🧱 Build
+ * 
+
+Others
+ * 
+
+Improvements:
+
+
+Changes in 1.3.7 (2021-05-12)
+=================================================
+
+✨ Features
+ * 
+
+🙌 Improvements
+ * NSE: Add logs for notification delay.
+ * Templates: Update bridge presenter template to auto-implement iOS 13 pull-down gesture.
+
+🐛 Bugfix
+ * NSE: Fixes to avoid PushKit crashes (#4269).
+ * Handle pull-down gesture for reactions history view (#4293).
+
+⚠️ API Changes
+ * 
+
+🗣 Translations
+ * 
+    
+🧱 Build
+ * 
+
+Others
+ * 
+
+Improvements:
+ * Upgrade MatrixKit version ([v0.14.12](https://github.com/matrix-org/matrix-ios-kit/releases/tag/v0.14.12)).
+
+Changes in 1.3.6 (2021-05-07)
+=================================================
+
+✨ Features
+ * 
+
+🙌 Improvements
+ * Jitsi: Use Jitsi server from homeserver's Well Known, if present, to create conferences (#3158).
+ * RoomMemberDetailsVC: Enable / disable "Hide all messages from this user" from settings (#4281).
+ * RoomVC: Show / Hide More and Report Content contextual menu from settings (#4285).
+ * SettingsVC: Show / hide NSFW and decrypted content options from build settings (#4290).
+ * RoomVC: Tweaked Scroll to Bottom FAB button (#4272).
+ * DesignKit: Introduce a new framework to manage design components.
+ * Add Jitsi widget remove banner for privileged users.
+ * Update "Jump to unread" banner to a pill style button.
+ * CallVC: Add transfer button.
+ * Spaces: Hide spaces from room list and home but keep space invites (#4252).
+ * Spaces: Show space invites and advertise that they are not available (#4277).
+ * Advertise that spaces are not available when tapping on a space link or a space invite (#4279).
+
+🐛 Bugfix
+ * RoomVC: Avoid navigation to integration management using integration popup with settings set to integration disabled (#4261).
+ * RiotSettings: Logging out resets RiotSettings (#4259).
+ * RoomVC: Crash in `setScrollToBottomHidden` method (#4270).
+ * Notifications: Make them work in debug mode (#4274).
+ * VoIP: Fix call bar layout issue (#4300).
+
+⚠️ API Changes
+ * 
+
+🗣 Translations
+ * 
+    
+🧱 Build
+ * GH Actions: Make jobs use the right version of MatrixKit and MatrixSDK.
+
+Others
+ * 
+
+Improvements:
+ * Upgrade MatrixKit version ([v0.14.11](https://github.com/matrix-org/matrix-ios-kit/releases/tag/v0.14.11)).
 
 Changes in 1.3.5 (2021-04-22)
 =================================================

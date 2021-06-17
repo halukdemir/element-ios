@@ -69,9 +69,9 @@
                             <rect key="frame" x="0.0" y="0.0" width="375" height="76"/>
                             <subviews>
                                 <view contentMode="scaleToFill" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="S6r-bo-jxw">
-                                    <rect key="frame" x="91" y="16" width="193.5" height="44"/>
+                                    <rect key="frame" x="93" y="16" width="189.5" height="44"/>
                                     <subviews>
-                                        <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="scrollup" translatesAutoresizingMaskIntoConstraints="NO" id="Vlz-UJ-Jz8">
+                                        <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="room_scroll_up" translatesAutoresizingMaskIntoConstraints="NO" id="Vlz-UJ-Jz8">
                                             <rect key="frame" x="14" y="10" width="24" height="24"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="24" id="JCI-mP-w3F"/>
@@ -79,25 +79,25 @@
                                             </constraints>
                                         </imageView>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Jump to unread" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="S1q-B4-Df3">
-                                            <rect key="frame" x="46" y="13" width="107.5" height="18"/>
+                                            <rect key="frame" x="42" y="13" width="107.5" height="18"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="1bj-1n-LgM">
-                                            <rect key="frame" x="0.0" y="0.0" width="147.5" height="44"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="143.5" height="44"/>
                                             <connections>
                                                 <action selector="onButtonPressed:" destination="-1" eventType="touchUpInside" id="bNQ-wp-3le"/>
                                             </connections>
                                         </button>
                                         <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="c4g-BY-xOo">
-                                            <rect key="frame" x="147.5" y="0.0" width="44" height="44"/>
+                                            <rect key="frame" x="143.5" y="0.0" width="44" height="44"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="44" id="2YD-H9-DyP"/>
                                                 <constraint firstAttribute="width" secondItem="c4g-BY-xOo" secondAttribute="height" multiplier="1:1" id="DG6-tf-YUj"/>
                                             </constraints>
                                             <inset key="imageEdgeInsets" minX="14" minY="14" maxX="14" maxY="14"/>
-                                            <state key="normal" image="cancel"/>
+                                            <state key="normal" image="new_close"/>
                                             <connections>
                                                 <action selector="onButtonPressed:" destination="-1" eventType="touchUpInside" id="8by-6v-ZGR"/>
                                             </connections>
@@ -107,7 +107,7 @@
                                     <constraints>
                                         <constraint firstAttribute="bottom" secondItem="1bj-1n-LgM" secondAttribute="bottom" id="06E-yF-opV"/>
                                         <constraint firstAttribute="height" constant="44" id="7TA-9m-DJm"/>
-                                        <constraint firstItem="S1q-B4-Df3" firstAttribute="leading" secondItem="Vlz-UJ-Jz8" secondAttribute="trailing" constant="8" id="Aer-yt-Ipv"/>
+                                        <constraint firstItem="S1q-B4-Df3" firstAttribute="leading" secondItem="Vlz-UJ-Jz8" secondAttribute="trailing" constant="4" id="Aer-yt-Ipv"/>
                                         <constraint firstItem="c4g-BY-xOo" firstAttribute="leading" secondItem="S1q-B4-Df3" secondAttribute="trailing" constant="-6" id="Iqm-Q5-jWz"/>
                                         <constraint firstItem="Vlz-UJ-Jz8" firstAttribute="centerY" secondItem="S6r-bo-jxw" secondAttribute="centerY" id="Oyl-YW-LyY"/>
                                         <constraint firstAttribute="trailing" secondItem="1bj-1n-LgM" secondAttribute="trailing" constant="46" id="SbE-4d-jky"/>
@@ -216,9 +216,9 @@
         </designable>
     </designables>
     <resources>
-        <image name="cancel" width="20" height="20"/>
+        <image name="new_close" width="16" height="16"/>
+        <image name="room_scroll_up" width="24" height="24"/>
         <image name="scrolldown" width="32" height="32"/>
-        <image name="scrollup" width="30" height="30"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

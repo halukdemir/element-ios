@@ -224,13 +224,37 @@ UINavigationControllerDelegate
  */
 - (BOOL)handleUniversalLinkFragment:(NSString*)fragment;
 
-#pragma mark - Call status handling
+/**
+ Process the fragment part of a vector.im link.
+
+ @param fragment the fragment part of the universal link.
+ @param universalLinkURL the unprocessed the universal link URL (optional).
+ @return YES in case of processing success.
+ */
+- (BOOL)handleUniversalLinkFragment:(NSString*)fragment fromURL:(NSURL*)universalLinkURL;
 
 /**
- Call status window displayed when user goes back to app during a call.
+ Process the URL of a vector.im link.
+
+ @param universalLinkURL the universal link URL.
+ @return YES in case of processing success.
  */
-@property (nonatomic, readonly) UIWindow* callStatusBarWindow;
-@property (nonatomic, readonly) CallBar* callBar;
+- (BOOL)handleUniversalLinkURL:(NSURL*)universalLinkURL;
+
+#pragma mark - Jitsi call
+
+/**
+ Open the Jitsi view controller from a widget.
+
+ @param jitsiWidget the jitsi widget.
+ @param video to indicate voice or video call.
+ */
+- (void)displayJitsiViewControllerWithWidget:(Widget*)jitsiWidget andVideo:(BOOL)video;
+
+/**
+ The current Jitsi view controller being displayed.
+ */
+@property (nonatomic, readonly) JitsiViewController *jitsiViewController;
 
 #pragma mark - App version management
 
@@ -253,5 +277,13 @@ UINavigationControllerDelegate
 
 - (void)legacyAppDelegate:(LegacyAppDelegate*)legacyAppDelegate wantsToPopToHomeViewControllerAnimated:(BOOL)animated completion:(void (^)(void))completion;
 - (void)legacyAppDelegateRestoreEmptyDetailsViewController:(LegacyAppDelegate*)legacyAppDelegate;
+
+- (void)legacyAppDelegate:(LegacyAppDelegate*)legacyAppDelegate didAddMatrixSession:(MXSession*)session;
+
+- (void)legacyAppDelegate:(LegacyAppDelegate*)legacyAppDelegate didRemoveMatrixSession:(MXSession*)session;
+
+- (void)legacyAppDelegate:(LegacyAppDelegate*)legacyAppDelegate didAddAccount:(MXKAccount*)account;
+
+- (void)legacyAppDelegate:(LegacyAppDelegate*)legacyAppDelegate didRemoveAccount:(MXKAccount*)account;
 
 @end

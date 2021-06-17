@@ -26,6 +26,15 @@ static const NSString *kJitsiDataErrorKey = @"error";
  Class name for RCTSafeAreaView. It's in the React Native SDK, so we cannot import its header.
  */
 static NSString * _Nonnull kRCTSafeAreaViewClassName = @"RCTSafeAreaView";
+/**
+ Class name for RCTTextView. It's in the React Native SDK, so we cannot import its header.
+ */
+static NSString * _Nonnull kRCTTextViewClassName = @"RCTTextView";
+
+/*
+ Some feature flags defined in https://github.com/jitsi/jitsi-meet/blob/master/react/features/base/flags/constants.js
+ */
+static NSString * _Nonnull kJitsiFeatureFlagChatEnabled = @"chat.enabled";
 
 @interface JitsiViewController () <PictureInPicturable, JitsiMeetViewDelegate>
 
@@ -120,7 +129,7 @@ static NSString * _Nonnull kRCTSafeAreaViewClassName = @"RCTSafeAreaView";
             }
             else
             {
-                NSLog(@"[JitsiVC] Failed to load widget: %@. Widget event: %@", widget, widget.widgetEvent);
+                MXLogDebug(@"[JitsiVC] Failed to load widget: %@. Widget event: %@", widget, widget.widgetEvent);
                 
                 if (failure)
                 {
@@ -157,7 +166,7 @@ static NSString * _Nonnull kRCTSafeAreaViewClassName = @"RCTSafeAreaView";
         }
     } failure:^(NSError * _Nonnull error) {
 
-        NSLog(@"[JitsiVC] Failed to load widget 2: %@. Widget event: %@", widget, widget.widgetEvent);
+        MXLogDebug(@"[JitsiVC] Failed to load widget 2: %@. Widget event: %@", widget, widget.widgetEvent);
 
         if (failure)
         {
@@ -268,6 +277,7 @@ static NSString * _Nonnull kRCTSafeAreaViewClassName = @"RCTSafeAreaView";
                                                                      andEmail:nil
                                                                     andAvatar:avatarUrl];
             builder.token = self.jwtToken;
+            [builder setFeatureFlag:kJitsiFeatureFlagChatEnabled withBoolean:NO];
         }];
         
         [self.jitsiMeetView join:jitsiMeetConferenceOptions];
@@ -275,12 +285,13 @@ static NSString * _Nonnull kRCTSafeAreaViewClassName = @"RCTSafeAreaView";
 }
 
 /**
- Finds all the views in self.jitsiMeetView recursively those kind of class with the name `kRCTSafeAreaViewClassName`.
+ Finds all the views in self.jitsiMeetView recursively those kind of class with the name `kRCTSafeAreaViewClassName` or `kRCTTextViewClassName`.
  */
 - (NSArray<UIView*>*)overlayViewsIn:(UIView *)view
 {
-    Class class = NSClassFromString(kRCTSafeAreaViewClassName);
-    if ([view isKindOfClass:class])
+    Class class1 = NSClassFromString(kRCTSafeAreaViewClassName);
+    Class class2 = NSClassFromString(kRCTTextViewClassName);
+    if ([view isKindOfClass:class1] || [view isKindOfClass:class2])
     {
         return @[view];
     }
@@ -310,7 +321,7 @@ static NSString * _Nonnull kRCTSafeAreaViewClassName = @"RCTSafeAreaView";
 {
     if (data[kJitsiDataErrorKey] != nil)
     {
-        NSLog(@"[JitsiViewController] conferenceTerminated - data: %@", data);
+        MXLogDebug(@"[JitsiViewController] conferenceTerminated - data: %@", data);
     }
     else
     {
@@ -340,7 +351,7 @@ static NSString * _Nonnull kRCTSafeAreaViewClassName = @"RCTSafeAreaView";
 
 #pragma mark - PictureInPicturable
 
-- (void)enterPiP
+- (void)didEnterPiP
 {
     self.overlayViews = [self overlayViewsIn:self.view];
     for (UIView *view in self.overlayViews)
@@ -349,7 +360,7 @@ static NSString * _Nonnull kRCTSafeAreaViewClassName = @"RCTSafeAreaView";
     }
 }
 
-- (void)exitPiP
+- (void)didExitPiP
 {
     for (UIView *view in self.overlayViews)
     {

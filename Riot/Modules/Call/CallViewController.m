@@ -37,8 +37,11 @@
     BOOL promptForStunServerFallback;
 }
 
+@property (nonatomic, weak) IBOutlet UIView *pipViewContainer;
+
 @property (nonatomic, strong) id<Theme> overriddenTheme;
 @property (nonatomic, assign) BOOL inPiP;
+@property (nonatomic, strong) CallPiPView *pipView;
 
 @property (nonatomic, strong) CustomSizedPresentationController *customSizedPresentationController;
 
@@ -140,6 +143,8 @@
     self.callStatusLabel.textColor = self.overriddenTheme.baseTextPrimaryColor;
     [self.resumeButton setTitleColor:self.overriddenTheme.tintColor
                             forState:UIControlStateNormal];
+    [self.transferButton setTitleColor:self.overriddenTheme.tintColor
+                              forState:UIControlStateNormal];
     
     self.localPreviewContainerView.layer.borderColor = self.overriddenTheme.tintColor.CGColor;
     self.localPreviewContainerView.layer.borderWidth = 2;
@@ -222,6 +227,8 @@
 - (void)call:(MXCall *)call stateDidChange:(MXCallState)state reason:(MXEvent *)event
 {
     [super call:call stateDidChange:state reason:event];
+    
+    [self configurePiPView];
 
     [self checkStunServerFallbackWithCallState:state];
 }
@@ -377,6 +384,23 @@
     return _overriddenTheme;
 }
 
+- (CallPiPView *)pipView
+{
+    if (_pipView == nil)
+    {
+        _pipView = [CallPiPView instantiateWithSession:self.mainSession];
+        [_pipView updateWithTheme:self.overriddenTheme];
+    }
+    return _pipView;
+}
+
+- (void)setMxCallOnHold:(MXCall *)mxCallOnHold
+{
+    [super setMxCallOnHold:mxCallOnHold];
+    
+    [self configurePiPView];
+}
+
 - (UIImage*)picturePlaceholder
 {
     CGFloat fontSize = floor(self.callerImageViewWidthConstraint.constant * 0.7);
@@ -500,11 +524,19 @@
         self.callStatusLabel.hidden = YES;
         self.localPreviewContainerView.hidden = YES;
         self.localPreviewActivityView.hidden = YES;
+        
+        if (self.pipViewContainer.subviews.count == 0)
+        {
+            [self.pipViewContainer vc_addSubViewMatchingParent:self.pipView];
+        }
+        [self configurePiPView];
+        self.pipViewContainer.hidden = NO;
     }
     else
     {
-        self.localPreviewContainerView.hidden = NO;
-        self.callerImageView.hidden = NO;
+        self.pipViewContainer.hidden = YES;
+        self.localPreviewContainerView.hidden = !self.mxCall.isVideoCall;
+        self.callerImageView.hidden = self.mxCall.isVideoCall && self.mxCall.state == MXCallStateConnected;
         self.callerNameLabel.hidden = NO;
         self.callStatusLabel.hidden = NO;
         
@@ -573,7 +605,7 @@
                                duration:0
                            interToneGap:0];
     
-    NSLog(@"[CallViewController] Sending DTMF tones %@", result ? @"succeeded": @"failed");
+    MXLogDebug(@"[CallViewController] Sending DTMF tones %@", result ? @"succeeded": @"failed");
 }
 
 #pragma mark - CallTransferMainViewControllerDelegate
@@ -613,9 +645,9 @@
                                     withTransferee:transfereeUser
                                       consultFirst:consult
                                            success:^(NSString * _Nonnull newCallId){
-            NSLog(@"Call transfer succeeded with new call ID: %@", newCallId);
+            MXLogDebug(@"Call transfer succeeded with new call ID: %@", newCallId);
         } failure:^(NSError * _Nullable error) {
-            NSLog(@"Call transfer failed with error: %@", error);
+            MXLogDebug(@"Call transfer failed with error: %@", error);
             failureBlock(error);
         }];
     };
@@ -642,14 +674,32 @@
     [viewController dismissViewControllerAnimated:YES completion:nil];
 }
 
+#pragma mark - PiP
+
+- (void)configurePiPView
+{
+    if (self.inPiP)
+    {
+        [self.pipView configureWithCall:self.mxCall
+                                   peer:self.peer
+                             onHoldCall:self.mxCallOnHold
+                             onHoldPeer:self.peerOnHold];
+    }
+}
+
 #pragma mark - PictureInPicturable
 
-- (void)enterPiP
+- (void)didEnterPiP
 {
     self.inPiP = YES;
 }
 
-- (void)exitPiP
+- (void)willExitPiP
+{
+    self.pipViewContainer.hidden = YES;
+}
+
+- (void)didExitPiP
 {
     self.inPiP = NO;
 }

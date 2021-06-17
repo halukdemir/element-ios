@@ -189,11 +189,13 @@ NSString *const kRecentsDataSourceTapOnDirectoryServerChange = @"kRecentsDataSou
     {
         SecureBackupBannerPreferences *secureBackupBannersPreferences = SecureBackupBannerPreferences.shared;
         
-        // Display the banner if only we can set up 4S and if there are messages keys to backup
+        // Display the banner only if we can set up 4S, if there are messages keys to backup and key backup is disabled
         if (!secureBackupBannersPreferences.hideSetupBanner
             && [self.mxSession vc_canSetupSecureBackup]
-            && self.mxSession.crypto.backup.hasKeysToBackup)
+            && self.mxSession.crypto.backup.hasKeysToBackup
+            && self.mxSession.crypto.backup.state == MXKeyBackupStateDisabled)
         {
+            MXLogDebug(@"[RecentsDataSource] updateSecureBackupBanner: Secure backup should be shown (crypto.backup.state = %lu)", (unsigned long)self.mxSession.crypto.backup.state);
             secureBackupBanner = SecureBackupBannerDisplaySetup;
         }
     }
@@ -238,7 +240,7 @@ NSString *const kRecentsDataSourceTapOnDirectoryServerChange = @"kRecentsDataSou
                 [self updateCrossSigningBannerDisplay:crossSigningBannerDisplay];
                 
             } failure:^(NSError * _Nonnull error) {
-                NSLog(@"[RecentsDataSource] refreshCrossSigningBannerDisplay: Fail to verify if cross signing banner can be displayed");
+                MXLogDebug(@"[RecentsDataSource] refreshCrossSigningBannerDisplay: Fail to verify if cross signing banner can be displayed");
             }];
         }
         else
@@ -1188,7 +1190,11 @@ NSString *const kRecentsDataSourceTapOnDirectoryServerChange = @"kRecentsDataSou
                 }
                 else
                 {
-                    [conversationCellDataArray addObject:recentCellDataStoring];
+                    // Hide spaces from home (keep space invites)
+                    if (room.summary.roomType != MXRoomTypeSpace)
+                    {
+                        [conversationCellDataArray addObject:recentCellDataStoring];
+                    }
                 }
             }
             else if (_recentsDataSourceMode == RecentsDataSourceModeFavourites)
@@ -1219,12 +1225,12 @@ NSString *const kRecentsDataSourceTapOnDirectoryServerChange = @"kRecentsDataSou
                 // Consider only non direct rooms.
                 if (!room.isDirect)
                 {
-                    // Keep only the invites, the favourites and the rooms without tag
+                    // Keep only the invites, the favourites and the rooms without tag and room type different from space
                     if (room.summary.membership == MXMembershipInvite)
                     {
                         [invitesCellDataArray addObject:recentCellDataStoring];
                     }
-                    else if (!room.accountData.tags.count || room.accountData.tags[kMXRoomTagFavourite])
+                    else if ((!room.accountData.tags.count || room.accountData.tags[kMXRoomTagFavourite]) && room.summary.roomType != MXRoomTypeSpace)
                     {
                         [conversationCellDataArray addObject:recentCellDataStoring];
                     }
@@ -1450,7 +1456,7 @@ NSString *const kRecentsDataSourceTapOnDirectoryServerChange = @"kRecentsDataSou
         }
     }
 
-    NSLog(@"[RecentsDataSource] refreshRoomsSections: Done in %.0fms", [[NSDate date] timeIntervalSinceDate:startDate] * 1000);
+    MXLogDebug(@"[RecentsDataSource] refreshRoomsSections: Done in %.0fms", [[NSDate date] timeIntervalSinceDate:startDate] * 1000);
 }
 
 - (void)dataSource:(MXKDataSource*)dataSource didCellChange:(id)changes
@@ -1612,7 +1618,7 @@ NSString *const kRecentsDataSourceTapOnDirectoryServerChange = @"kRecentsDataSou
 
 - (void)moveRoomCell:(MXRoom*)room from:(NSIndexPath*)oldPath to:(NSIndexPath*)newPath success:(void (^)(void))moveSuccess failure:(void (^)(NSError *error))moveFailure;
 {
-    NSLog(@"[RecentsDataSource] moveCellFrom (%tu, %tu) to (%tu, %tu)", oldPath.section, oldPath.row, newPath.section, newPath.row);
+    MXLogDebug(@"[RecentsDataSource] moveCellFrom (%tu, %tu) to (%tu, %tu)", oldPath.section, oldPath.row, newPath.section, newPath.row);
     
     if ([self canCellMoveFrom:oldPath to:newPath] && ![newPath isEqual:oldPath])
     {
@@ -1623,7 +1629,7 @@ NSString *const kRecentsDataSourceTapOnDirectoryServerChange = @"kRecentsDataSou
                       success:moveSuccess
                       failure:^(NSError *error) {
                           
-                          NSLog(@"[RecentsDataSource] Failed to mark as direct");
+                          MXLogDebug(@"[RecentsDataSource] Failed to mark as direct");
                           
                           if (moveFailure)
                           {
@@ -1644,14 +1650,14 @@ NSString *const kRecentsDataSourceTapOnDirectoryServerChange = @"kRecentsDataSou
             
             NSString* tagOrder = [room.mxSession tagOrderToBeAtIndex:newPath.row from:oldPos withTag:dstRoomTag];
             
-            NSLog(@"[RecentsDataSource] Update the room %@ [%@] tag from %@ to %@ with tag order %@", room.roomId, room.summary.displayname, oldRoomTag, dstRoomTag, tagOrder);
+            MXLogDebug(@"[RecentsDataSource] Update the room %@ [%@] tag from %@ to %@ with tag order %@", room.roomId, room.summary.displayname, oldRoomTag, dstRoomTag, tagOrder);
             
             [room replaceTag:oldRoomTag
                        byTag:dstRoomTag
                    withOrder:tagOrder
                      success: ^{
                          
-                         NSLog(@"[RecentsDataSource] move is done");
+                         MXLogDebug(@"[RecentsDataSource] move is done");
                          
                          if (moveSuccess)
                          {
@@ -1662,7 +1668,7 @@ NSString *const kRecentsDataSourceTapOnDirectoryServerChange = @"kRecentsDataSou
                          
                      } failure:^(NSError *error) {
                          
-                         NSLog(@"[RecentsDataSource] Failed to update the tag %@ of room (%@)", dstRoomTag, room.roomId);
+                         MXLogDebug(@"[RecentsDataSource] Failed to update the tag %@ of room (%@)", dstRoomTag, room.roomId);
                          
                          if (moveFailure)
                          {
@@ -1678,7 +1684,7 @@ NSString *const kRecentsDataSourceTapOnDirectoryServerChange = @"kRecentsDataSou
     }
     else
     {
-        NSLog(@"[RecentsDataSource] cannot move this cell");
+        MXLogDebug(@"[RecentsDataSource] cannot move this cell");
         
         if (moveFailure)
         {

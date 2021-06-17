@@ -628,7 +628,7 @@
         }
         
         // Check whether the option Ignore may be presented
-        if (self.mxRoomMember.membership == MXMembershipJoin)
+        if (RiotSettings.shared.roomMemberScreenShowIgnore && self.mxRoomMember.membership == MXMembershipJoin)
         {
             // is he already ignored ?
             if (![self.mainSession isUserIgnored:self.mxRoomMember.userId])
@@ -1156,7 +1156,7 @@
                                                                              __strong __typeof(weakSelf)self = weakSelf;
                                                                              [self stopActivityIndicator];
                                                                              
-                                                                             NSLog(@"[RoomMemberDetailVC] Ban user (%@) failed", self.mxRoomMember.userId);
+                                                                             MXLogDebug(@"[RoomMemberDetailVC] Ban user (%@) failed", self.mxRoomMember.userId);
                                                                              //Alert user
                                                                              [[AppDelegate theDelegate] showErrorAsAlert:error];
                                                                              
@@ -1220,7 +1220,7 @@
                                                                            __strong __typeof(weakSelf)self = weakSelf;
                                                                            [self stopActivityIndicator];
                                                                            
-                                                                           NSLog(@"[RoomMemberDetailVC] Removing user (%@) failed", self.mxRoomMember.userId);
+                                                                           MXLogDebug(@"[RoomMemberDetailVC] Removing user (%@) failed", self.mxRoomMember.userId);
                                                                            //Alert user
                                                                            [[AppDelegate theDelegate] showErrorAsAlert:error];
                                                                            

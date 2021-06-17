@@ -1,5 +1,5 @@
 // 
-// Copyright 2020 New Vector Ltd
+// Copyright 2021 Vector Creations Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,24 +14,7 @@
 // limitations under the License.
 //
 
-import Foundation
+// Configuration settings file format documentation can be found at:
+// https://help.apple.com/xcode/#/dev745c5c974
 
-class CallBarDismissOperation: AsyncOperation {
-    
-    private var presenter: CallPresenter
-    private var completion: (() -> Void)?
-    
-    init(presenter: CallPresenter,
-         completion: (() -> Void)? = nil) {
-        self.presenter = presenter
-        self.completion = completion
-    }
-    
-    override func main() {
-        presenter.delegate?.callPresenter(presenter, dismissCallBar: {
-            self.finish()
-            self.completion?()
-        })
-    }
-    
-}
+#include "Common.xcconfig"

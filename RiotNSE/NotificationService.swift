@@ -18,9 +18,22 @@ import UserNotifications
 import MatrixKit
 import MatrixSDK
 
+/// The number of milliseconds in one second.
+private let MSEC_PER_SEC: TimeInterval = 1000
+
 class NotificationService: UNNotificationServiceExtension {
     
+    private struct NSE {
+        enum Constants {
+            static let voipPushRequestTimeout: TimeInterval = 15
+            static let timeNeededToSendVoIPPushes: TimeInterval = 20
+        }
+    }
+    
     //  MARK: - Properties
+    
+    /// Receiving dates for notifications. Keys are eventId's
+    private var receiveDates: [String: Date] = [:]
     
     /// Content handlers. Keys are eventId's
     private var contentHandlers: [String: ((UNNotificationContent) -> Void)] = [:]
@@ -64,11 +77,11 @@ class NotificationService: UNNotificationServiceExtension {
         //  setup logs
         setupLogger()
         
-        NSLog(" ")
-        NSLog(" ")
-        NSLog("################################################################################")
-        NSLog("[NotificationService] Instance: \(self), thread: \(Thread.current)")
-        NSLog("[NotificationService] Payload came: \(userInfo)")
+        MXLog.debug(" ")
+        MXLog.debug(" ")
+        MXLog.debug("################################################################################")
+        MXLog.debug("[NotificationService] Instance: \(self), thread: \(Thread.current)")
+        MXLog.debug("[NotificationService] Payload came: \(userInfo)")
         
         //  log memory at the beginning of the process
         logMemory()
@@ -78,7 +91,7 @@ class NotificationService: UNNotificationServiceExtension {
         //  check if this is a Matrix notification
         guard let roomId = userInfo["room_id"] as? String, let eventId = userInfo["event_id"] as? String else {
             //  it's not a Matrix notification, do not change the content
-            NSLog("[NotificationService] didReceiveRequest: This is not a Matrix notification.")
+            MXLog.debug("[NotificationService] didReceiveRequest: This is not a Matrix notification.")
             contentHandler(request.content)
             return
         }
@@ -87,6 +100,9 @@ class NotificationService: UNNotificationServiceExtension {
         guard let content = request.content.mutableCopy() as? UNMutableNotificationContent else {
             return
         }
+        
+        //  store receive date
+        receiveDates[eventId] = Date()
         
         //  read badge from "unread_count"
         //  no need to check before, if it's nil, the badge will remain unchanged
@@ -108,30 +124,37 @@ class NotificationService: UNNotificationServiceExtension {
         // Called just before the extension will be terminated by the system.
         // Use this as an opportunity to deliver your "best attempt" at modified content, otherwise the original push payload will be used.
         
-        NSLog("[NotificationService] serviceExtensionTimeWillExpire")
+        MXLog.debug("[NotificationService] serviceExtensionTimeWillExpire")
         //  No-op here. If the process is killed by the OS due to time limit, it will also show the notification with the original content.
     }
     
     deinit {
-        NSLog("[NotificationService] deinit for \(self)");
+        MXLog.debug("[NotificationService] deinit for \(self)");
         self.logMemory()
-        NSLog(" ")
+        MXLog.debug(" ")
     }
     
     
     //  MARK: - Private
     
     private func logMemory() {
-        NSLog("[NotificationService] Memory: footprint: \(MXMemory.formattedMemoryFootprint()) - available: \(MXMemory.formattedMemoryAvailable())")
+        MXLog.debug("[NotificationService] Memory: footprint: \(MXMemory.formattedMemoryFootprint()) - available: \(MXMemory.formattedMemoryAvailable())")
     }
     
     private func setupLogger() {
         if !NotificationService.isLoggerInitialized {
+            let configuration = MXLogConfiguration()
+            configuration.logLevel = .verbose
+            configuration.maxLogFilesCount = 100
+            configuration.logFilesSizeLimit = 10 * 1024 * 1024; // 10MB
+            configuration.subLogName = "nse"
+            
             if isatty(STDERR_FILENO) == 0 {
-                MXLogger.setSubLogName("nse")
-                let sizeLimit: UInt = 10 * 1024 * 1024; // 10MB
-                MXLogger.redirectNSLog(toFiles: true, numberOfFiles: 100, sizeLimit: sizeLimit)
+                configuration.redirectLogsToFiles = true
             }
+            
+            MXLog.configure(configuration)
+            
             NotificationService.isLoggerInitialized = true
         }
     }
@@ -141,15 +164,15 @@ class NotificationService: UNNotificationServiceExtension {
         self.userAccount = MXKAccountManager.shared()?.activeAccounts.first
         if let userAccount = userAccount {
             if NotificationService.backgroundSyncService == nil {
-                NSLog("[NotificationService] setup: MXBackgroundSyncService init: BEFORE")
+                MXLog.debug("[NotificationService] setup: MXBackgroundSyncService init: BEFORE")
                 self.logMemory()
                 NotificationService.backgroundSyncService = MXBackgroundSyncService(withCredentials: userAccount.mxCredentials)
-                NSLog("[NotificationService] setup: MXBackgroundSyncService init: AFTER")
+                MXLog.debug("[NotificationService] setup: MXBackgroundSyncService init: AFTER")
                 self.logMemory()
             }
             completion()
         } else {
-            NSLog("[NotificationService] setup: No active accounts")
+            MXLog.debug("[NotificationService] setup: No active accounts")
             fallbackToBestAttemptContent(forEventId: eventId)
         }
     }
@@ -160,7 +183,7 @@ class NotificationService: UNNotificationServiceExtension {
     ///   - roomId: Room identifier to fetch display name
     private func preprocessPayload(forEventId eventId: String, roomId: String) {
         if localAuthenticationService.isProtectionSet {
-            NSLog("[NotificationService] preprocessPayload: Do not preprocess because app protection is set")
+            MXLog.debug("[NotificationService] preprocessPayload: Do not preprocess because app protection is set")
             return
         }
         guard let roomSummary = NotificationService.backgroundSyncService.roomSummary(forRoomId: roomId) else { return }
@@ -173,23 +196,27 @@ class NotificationService: UNNotificationServiceExtension {
     }
     
     private func fetchEvent(withEventId eventId: String, roomId: String, allowSync: Bool = true) {
-        NSLog("[NotificationService] fetchEvent")
+        MXLog.debug("[NotificationService] fetchEvent")
         
         NotificationService.backgroundSyncService.event(withEventId: eventId,
                                                         inRoom: roomId,
                                                         completion: { (response) in
                                                             switch response {
                                                             case .success(let event):
-                                                                NSLog("[NotificationService] fetchEvent: Event fetched successfully")
+                                                                MXLog.debug("[NotificationService] fetchEvent: Event fetched successfully")
                                                                 self.processEvent(event)
                                                             case .failure(let error):
-                                                                NSLog("[NotificationService] fetchEvent: error: \(error)")
+                                                                MXLog.debug("[NotificationService] fetchEvent: error: \(error)")
                                                                 self.fallbackToBestAttemptContent(forEventId: eventId)
                                                             }
                                                         })
     }
     
     private func processEvent(_ event: MXEvent) {
+        if let receiveDate = receiveDates[event.eventId] {
+            MXLog.debug("[NotificationService] processEvent: notification receive delay: \(receiveDate.timeIntervalSince1970*MSEC_PER_SEC - TimeInterval(event.originServerTs)) ms")
+        }
+        
         guard let content = bestAttemptContents[event.eventId], let userAccount = userAccount else {
             self.fallbackToBestAttemptContent(forEventId: event.eventId)
             return
@@ -221,23 +248,23 @@ class NotificationService: UNNotificationServiceExtension {
                 //  When it completes, it'll continue with the bestAttemptContent.
                 return
             } else {
-                NSLog("[NotificationService] processEvent: Calling content handler for: \(String(describing: event.eventId)), isUnwanted: \(isUnwantedNotification)")
+                MXLog.debug("[NotificationService] processEvent: Calling content handler for: \(String(describing: event.eventId)), isUnwanted: \(isUnwantedNotification)")
                 self.contentHandlers[event.eventId]?(content)
                 //  clear maps
                 self.contentHandlers.removeValue(forKey: event.eventId)
                 self.bestAttemptContents.removeValue(forKey: event.eventId)
                 
                 // We are done for this push
-                NSLog("--------------------------------------------------------------------------------")
+                MXLog.debug("--------------------------------------------------------------------------------")
             }
         }
     }
     
     private func fallbackToBestAttemptContent(forEventId eventId: String) {
-        NSLog("[NotificationService] fallbackToBestAttemptContent: method called.")
+        MXLog.debug("[NotificationService] fallbackToBestAttemptContent: method called.")
         
         guard let content = bestAttemptContents[eventId] else {
-            NSLog("[NotificationService] fallbackToBestAttemptContent: Best attempt content is missing.")
+            MXLog.debug("[NotificationService] fallbackToBestAttemptContent: Best attempt content is missing.")
             return
         }
         
@@ -246,14 +273,15 @@ class NotificationService: UNNotificationServiceExtension {
         //  clear maps
         contentHandlers.removeValue(forKey: eventId)
         bestAttemptContents.removeValue(forKey: eventId)
+        receiveDates.removeValue(forKey: eventId)
         
         // We are done for this push
-        NSLog("--------------------------------------------------------------------------------")
+        MXLog.debug("--------------------------------------------------------------------------------")
     }
     
     private func notificationContent(forEvent event: MXEvent, forAccount account: MXKAccount, onComplete: @escaping (UNNotificationContent?) -> Void) {
         guard let content = event.content, content.count > 0 else {
-            NSLog("[NotificationService] notificationContentForEvent: empty event content")
+            MXLog.debug("[NotificationService] notificationContentForEvent: empty event content")
             onComplete(nil)
             return
         }
@@ -262,7 +290,7 @@ class NotificationService: UNNotificationServiceExtension {
         let isRoomMentionsOnly = NotificationService.backgroundSyncService.isRoomMentionsOnly(roomId)
         let roomSummary = NotificationService.backgroundSyncService.roomSummary(forRoomId: roomId)
         
-        NSLog("[NotificationService] notificationContentForEvent: Attempt to fetch the room state")
+        MXLog.debug("[NotificationService] notificationContentForEvent: Attempt to fetch the room state")
         
         self.context(ofEvent: event, inRoom: roomId, completion: { (response) in
             switch response {
@@ -290,7 +318,14 @@ class NotificationService: UNNotificationServiceExtension {
                             
                             // call notifications should stand out from normal messages, so we don't stack them
                             threadIdentifier = nil
-                            self.sendVoipPush(forEvent: event)
+                            
+                            if let callInviteContent = MXCallInviteEventContent(fromJSON: event.content),
+                               callInviteContent.lifetime > event.age,
+                               (callInviteContent.lifetime - event.age) > UInt(NSE.Constants.timeNeededToSendVoIPPushes * MSEC_PER_SEC) {
+                                self.sendVoipPush(forEvent: event)
+                            } else {
+                                MXLog.debug("[NotificationService] notificationContent: Do not attempt to send a VoIP push, there is not enough time to process it.")
+                            }
                         case .roomMessage, .roomEncrypted:
                             if isRoomMentionsOnly {
                                 // A local notification will be displayed only for highlighted notification.
@@ -311,7 +346,7 @@ class NotificationService: UNNotificationServiceExtension {
                                 
                                 if !isHighlighted {
                                     // Ignore this notif.
-                                    NSLog("[NotificationService] notificationContentForEvent: Ignore non highlighted notif in mentions only room")
+                                    MXLog.debug("[NotificationService] notificationContentForEvent: Ignore non highlighted notif in mentions only room")
                                     onComplete(nil)
                                     return
                                 }
@@ -374,21 +409,19 @@ class NotificationService: UNNotificationServiceExtension {
                             
                             notificationBody = NSString.localizedUserNotificationString(forKey: "STICKER_FROM_USER", arguments: [eventSenderName as Any])
                         case .custom:
-                            if event.type == kWidgetMatrixEventTypeString || event.type == kWidgetModularEventTypeString {
-                                if let content = event.content, let type = content["type"] as? String {
-                                    if type == kWidgetTypeJitsiV1 || type == kWidgetTypeJitsiV2 {
-                                        notificationBody = NSString.localizedUserNotificationString(forKey: "GROUP_CALL_STARTED", arguments: nil)
-                                        notificationTitle = roomDisplayName
-                                        
-                                        // call notifications should stand out from normal messages, so we don't stack them
-                                        threadIdentifier = nil
-                                        //  only send VoIP pushes if ringing is enabled for group calls
-                                        if RiotSettings.shared.enableRingingForGroupCalls {
-                                            self.sendVoipPush(forEvent: event)
-                                        } else {
-                                            additionalUserInfo = [Constants.userInfoKeyPresentNotificationOnForeground: true]
-                                        }
-                                    }
+                            if (event.type == kWidgetMatrixEventTypeString || event.type == kWidgetModularEventTypeString),
+                               let type = event.content?["type"] as? String,
+                               (type == kWidgetTypeJitsiV1 || type == kWidgetTypeJitsiV2) {
+                                notificationBody = NSString.localizedUserNotificationString(forKey: "GROUP_CALL_STARTED", arguments: nil)
+                                notificationTitle = roomDisplayName
+                                
+                                // call notifications should stand out from normal messages, so we don't stack them
+                                threadIdentifier = nil
+                                //  only send VoIP pushes if ringing is enabled for group calls
+                                if RiotSettings.shared.enableRingingForGroupCalls {
+                                    self.sendVoipPush(forEvent: event)
+                                } else {
+                                    additionalUserInfo = [Constants.userInfoKeyPresentNotificationOnForeground: true]
                                 }
                             }
                         default:
@@ -396,13 +429,13 @@ class NotificationService: UNNotificationServiceExtension {
                     }
                     
                     if self.localAuthenticationService.isProtectionSet {
-                        NSLog("[NotificationService] notificationContentForEvent: Resetting title and body because app protection is set")
+                        MXLog.debug("[NotificationService] notificationContentForEvent: Resetting title and body because app protection is set")
                         notificationBody = NSString.localizedUserNotificationString(forKey: "MESSAGE_PROTECTED", arguments: [])
                         notificationTitle = nil
                     }
                     
                     guard notificationBody != nil else {
-                        NSLog("[NotificationService] notificationContentForEvent: notificationBody is nil")
+                        MXLog.debug("[NotificationService] notificationContentForEvent: notificationBody is nil")
                         onComplete(nil)
                         return
                     }
@@ -415,10 +448,10 @@ class NotificationService: UNNotificationServiceExtension {
                                                                        pushRule: pushRule,
                                                                        additionalInfo: additionalUserInfo)
                     
-                    NSLog("[NotificationService] notificationContentForEvent: Calling onComplete.")
+                    MXLog.debug("[NotificationService] notificationContentForEvent: Calling onComplete.")
                     onComplete(notificationContent)
                 case .failure(let error):
-                    NSLog("[NotificationService] notificationContentForEvent: error: \(error)")
+                    MXLog.debug("[NotificationService] notificationContentForEvent: error: \(error)")
                     onComplete(nil)
             }
         })
@@ -530,7 +563,7 @@ class NotificationService: UNNotificationServiceExtension {
             }
         }
         
-        NSLog("Sound name: \(String(describing: soundName))")
+        MXLog.debug("Sound name: \(String(describing: soundName))")
         
         return soundName
     }
@@ -561,21 +594,44 @@ class NotificationService: UNNotificationServiceExtension {
             return
         }
         
-        pushNotificationStore.lastCallInvite = event
+        if #available(iOS 13.0, *) {
+            if event.isEncrypted {
+                guard let clearEvent = event.clear else {
+                    MXLog.debug("[NotificationService] sendVoipPush: Do not send a VoIP push for undecrypted event, it'll cause a crash.")
+                    return
+                }
+                
+                //  Add some original data on the clear event
+                clearEvent.eventId = event.eventId
+                clearEvent.originServerTs = event.originServerTs
+                clearEvent.sender = event.sender
+                clearEvent.roomId = event.roomId
+                pushNotificationStore.storeCallInvite(clearEvent)
+            } else {
+                pushNotificationStore.storeCallInvite(event)
+            }
+        }
         
         ongoingVoIPPushRequests[event.eventId] = true
         
         let appId = BuildSettings.pushKitAppId
         
-        pushGatewayRestClient.notifyApp(withId: appId, pushToken: token, eventId: event.eventId, roomId: event.roomId, eventType: nil, sender: event.sender, success: { [weak self] (rejected) in
-            NSLog("[NotificationService] sendVoipPush succeeded, rejected tokens: \(rejected)")
-            
-            guard let self = self else { return }
-            self.ongoingVoIPPushRequests.removeValue(forKey: event.eventId)
-            
-            self.fallbackToBestAttemptContent(forEventId: event.eventId)
-        }) { [weak self] (error) in
-            NSLog("[NotificationService] sendVoipPush failed with error: \(error)")
+        pushGatewayRestClient.notifyApp(withId: appId,
+                                        pushToken: token,
+                                        eventId: event.eventId,
+                                        roomId: event.roomId,
+                                        eventType: nil,
+                                        sender: event.sender,
+                                        timeout: NSE.Constants.voipPushRequestTimeout,
+                                        success: { [weak self] (rejected) in
+                                            MXLog.debug("[NotificationService] sendVoipPush succeeded, rejected tokens: \(rejected)")
+                                            
+                                            guard let self = self else { return }
+                                            self.ongoingVoIPPushRequests.removeValue(forKey: event.eventId)
+                                            
+                                            self.fallbackToBestAttemptContent(forEventId: event.eventId)
+                                        }) { [weak self] (error) in
+            MXLog.debug("[NotificationService] sendVoipPush failed with error: \(error)")
             
             guard let self = self else { return }
             self.ongoingVoIPPushRequests.removeValue(forKey: event.eventId)

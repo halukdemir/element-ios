@@ -60,6 +60,8 @@ final class RiotSettings: NSObject {
         static let roomSettingsScreenShowFlairSettings = "roomSettingsScreenShowFlairSettings"
         static let roomSettingsScreenShowAdvancedSettings = "roomSettingsScreenShowAdvancedSettings"
         static let roomSettingsScreenAdvancedShowEncryptToVerifiedOption = "roomSettingsScreenAdvancedShowEncryptToVerifiedOption"
+        static let settingsScreenShowNotificationDecodedContentOption = "settingsScreenShowNotificationDecodedContentOption"
+        static let settingsScreenShowNsfwRoomsOption = "settingsScreenShowNsfwRoomsOption"
         static let roomsAllowToJoinPublicRooms = "roomsAllowToJoinPublicRooms"
         static let homeScreenShowFavouritesTab = "homeScreenShowFavouritesTab"
         static let homeScreenShowPeopleTab = "homeScreenShowPeopleTab"
@@ -71,8 +73,13 @@ final class RiotSettings: NSObject {
         static let roomScreenAllowMediaLibraryAction = "roomScreenAllowMediaLibraryAction"
         static let roomScreenAllowStickerAction = "roomScreenAllowStickerAction"
         static let roomScreenAllowFilesAction = "roomScreenAllowFilesAction"
+        static let roomContextualMenuShowMoreOptionForMessages = "roomContextualMenuShowMoreOptionForMessages"
+        static let roomContextualMenuShowMoreOptionForStates = "roomContextualMenuShowMoreOptionForStates"
+        static let roomContextualMenuShowReportContentOption = "roomContextualMenuShowReportContentOption"
         static let roomInfoScreenShowIntegrations = "roomInfoScreenShowIntegrations"
+        static let roomMemberScreenShowIgnore = "roomMemberScreenShowIgnore"
         static let unifiedSearchScreenShowPublicDirectory = "unifiedSearchScreenShowPublicDirectory"
+        static let hideSpaceBetaAnnounce = "hideSpaceBetaAnnounce"
     }
     
     static let shared = RiotSettings()
@@ -323,6 +330,39 @@ final class RiotSettings: NSObject {
             defaults.set(newValue, forKey: UserDefaultsKeys.roomScreenAllowFilesAction)
         }
     }
+    
+    // MARK: - Room Contextual Menu
+
+    var roomContextualMenuShowMoreOptionForMessages: Bool {
+        get {
+            guard defaults.object(forKey: UserDefaultsKeys.roomContextualMenuShowMoreOptionForMessages) != nil else {
+                return BuildSettings.roomContextualMenuShowMoreOptionForMessages
+            }
+            return defaults.bool(forKey: UserDefaultsKeys.roomContextualMenuShowMoreOptionForMessages)
+        } set {
+            defaults.set(newValue, forKey: UserDefaultsKeys.roomContextualMenuShowMoreOptionForMessages)
+        }
+    }
+    var roomContextualMenuShowMoreOptionForStates: Bool {
+        get {
+            guard defaults.object(forKey: UserDefaultsKeys.roomContextualMenuShowMoreOptionForStates) != nil else {
+                return BuildSettings.roomContextualMenuShowMoreOptionForStates
+            }
+            return defaults.bool(forKey: UserDefaultsKeys.roomContextualMenuShowMoreOptionForStates)
+        } set {
+            defaults.set(newValue, forKey: UserDefaultsKeys.roomContextualMenuShowMoreOptionForStates)
+        }
+    }
+    var roomContextualMenuShowReportContentOption: Bool {
+        get {
+            guard defaults.object(forKey: UserDefaultsKeys.roomContextualMenuShowReportContentOption) != nil else {
+                return BuildSettings.roomContextualMenuShowReportContentOption
+            }
+            return defaults.bool(forKey: UserDefaultsKeys.roomContextualMenuShowReportContentOption)
+        } set {
+            defaults.set(newValue, forKey: UserDefaultsKeys.roomContextualMenuShowReportContentOption)
+        }
+    }
 
     // MARK: - Room Info Screen
     
@@ -334,6 +374,19 @@ final class RiotSettings: NSObject {
             return defaults.bool(forKey: UserDefaultsKeys.roomInfoScreenShowIntegrations)
         } set {
             defaults.set(newValue, forKey: UserDefaultsKeys.roomInfoScreenShowIntegrations)
+        }
+    }
+
+    // MARK: - Room Member Screen
+    
+    var roomMemberScreenShowIgnore: Bool {
+        get {
+            guard defaults.object(forKey: UserDefaultsKeys.roomMemberScreenShowIgnore) != nil else {
+                return BuildSettings.roomMemberScreenShowIgnore
+            }
+            return defaults.bool(forKey: UserDefaultsKeys.roomMemberScreenShowIgnore)
+        } set {
+            defaults.set(newValue, forKey: UserDefaultsKeys.roomMemberScreenShowIgnore)
         }
     }
 
@@ -466,6 +519,26 @@ final class RiotSettings: NSObject {
             return defaults.bool(forKey: UserDefaultsKeys.settingsScreenShowEnableStunServerFallback)
         } set {
             defaults.set(newValue, forKey: UserDefaultsKeys.settingsScreenShowEnableStunServerFallback)
+        }
+    }
+    var settingsScreenShowNotificationDecodedContentOption: Bool {
+        get {
+            guard defaults.object(forKey: UserDefaultsKeys.settingsScreenShowNotificationDecodedContentOption) != nil else {
+                return BuildSettings.settingsScreenShowNotificationDecodedContentOption
+            }
+            return defaults.bool(forKey: UserDefaultsKeys.settingsScreenShowNotificationDecodedContentOption)
+        } set {
+            defaults.set(newValue, forKey: UserDefaultsKeys.settingsScreenShowNotificationDecodedContentOption)
+        }
+    }
+    var settingsScreenShowNsfwRoomsOption: Bool {
+        get {
+            guard defaults.object(forKey: UserDefaultsKeys.settingsScreenShowNsfwRoomsOption) != nil else {
+                return BuildSettings.settingsScreenShowNsfwRoomsOption
+            }
+            return defaults.bool(forKey: UserDefaultsKeys.settingsScreenShowNsfwRoomsOption)
+        } set {
+            defaults.set(newValue, forKey: UserDefaultsKeys.settingsScreenShowNsfwRoomsOption)
         }
     }
     var settingsSecurityScreenShowSessions: Bool {
@@ -635,4 +708,13 @@ final class RiotSettings: NSObject {
         }
     }
     
+    // MARK: - Beta
+    
+    var hideSpaceBetaAnnounce: Bool {
+        get {
+            return defaults.bool(forKey: UserDefaultsKeys.hideSpaceBetaAnnounce)
+        } set {
+            defaults.set(newValue, forKey: UserDefaultsKeys.hideSpaceBetaAnnounce)
+        }
+    }
 }

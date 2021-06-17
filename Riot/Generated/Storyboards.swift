@@ -97,6 +97,11 @@ internal enum StoryboardScene {
 
     internal static let initialScene = InitialSceneType<Riot.KeyBackupSetupSuccessFromRecoveryKeyViewController>(storyboard: KeyBackupSetupSuccessFromRecoveryKeyViewController.self)
   }
+  internal enum KeyBackupSetupSuccessFromSecureBackupViewController: StoryboardType {
+    internal static let storyboardName = "KeyBackupSetupSuccessFromSecureBackupViewController"
+
+    internal static let initialScene = InitialSceneType<Riot.KeyBackupSetupSuccessFromSecureBackupViewController>(storyboard: KeyBackupSetupSuccessFromSecureBackupViewController.self)
+  }
   internal enum KeyVerificationDataLoadingViewController: StoryboardType {
     internal static let storyboardName = "KeyVerificationDataLoadingViewController"
 
@@ -224,10 +229,20 @@ internal enum StoryboardScene {
 
     internal static let searchableDirectoryViewController = SceneType<Riot.ShowDirectoryViewController>(storyboard: ShowDirectoryViewController.self, identifier: "SearchableDirectoryViewController")
   }
+  internal enum SideMenuViewController: StoryboardType {
+    internal static let storyboardName = "SideMenuViewController"
+
+    internal static let initialScene = InitialSceneType<Riot.SideMenuViewController>(storyboard: SideMenuViewController.self)
+  }
   internal enum SimpleScreenTemplateViewController: StoryboardType {
     internal static let storyboardName = "SimpleScreenTemplateViewController"
 
     internal static let initialScene = InitialSceneType<Riot.SimpleScreenTemplateViewController>(storyboard: SimpleScreenTemplateViewController.self)
+  }
+  internal enum SpaceFeatureUnaivableViewController: StoryboardType {
+    internal static let storyboardName = "SpaceFeatureUnaivableViewController"
+
+    internal static let initialScene = InitialSceneType<Riot.SpaceFeatureUnaivableViewController>(storyboard: SpaceFeatureUnaivableViewController.self)
   }
   internal enum TemplateScreenViewController: StoryboardType {
     internal static let storyboardName = "TemplateScreenViewController"
